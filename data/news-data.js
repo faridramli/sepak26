@@ -1,0 +1,153 @@
+window.SEPAK26_NEWS = {
+  "metadata": {
+    "updatedAt": "2026-06-13T09:56:44+08:00",
+    "nextUpdateAt": "2026-06-13T21:56:44+08:00",
+    "sourceCount": 6,
+    "status": "verified",
+    "methodology": "Laporan 12 jam terakhir diutamakan dan tetingkap diluaskan kepada 36 jam, dengan fakta utama disilang semak merentas sumber teras, AP, The Guardian dan media rasmi pasukan."
+  },
+  "articles": [
+    {
+      "id": "amerika-syarikat-paraguay-permulaan-pantas-2026-06-13",
+      "category": "Pasukan",
+      "date": "13 Jun 2026",
+      "datetime": "2026-06-13T10:05:00+08:00",
+      "title": "Amerika Syarikat menterjemah tekanan tuan rumah",
+      "excerpt": "Amerika Syarikat mendahului Paraguay 2-0 pada separuh masa pertama menerusi jaringan sendiri Damian Bobadilla dan gol Folarin Balogun. Christian Pulisic terlibat dalam gerakan kedua-dua gol ketika pasukan tuan rumah menguasai tempo awal.",
+      "analysis": "Permulaan agresif itu mengurangkan beban emosi perlawanan pertama di gelanggang sendiri dan menunjukkan struktur serangan Mauricio Pochettino mampu membuka blok Paraguay. Hubungan Pulisic, Weston McKennie dan Balogun memberi Amerika Syarikat laluan serangan yang lebih pelbagai daripada sekadar hantaran silang. Namun, mereka masih perlu mengekalkan kawalan selepas mendahului kerana perbezaan gol boleh menjadi penting dalam Kumpulan D.",
+      "confidence": "Tinggi",
+      "sources": [
+        {
+          "name": "ESPN",
+          "url": "https://www.espn.com/soccer/story/_/id/45513625/united-states-paraguay-world-cup-2026-match-report",
+          "publishedAt": "13 Jun 2026"
+        },
+        {
+          "name": "The Guardian",
+          "url": "https://www.theguardian.com/football/live/2026/jun/12/usa-v-paraguay-world-cup-2026-live",
+          "publishedAt": "13 Jun 2026"
+        }
+      ]
+    },
+    {
+      "id": "kanada-bosnia-mata-pertama-2026-06-13",
+      "category": "Pasukan",
+      "date": "13 Jun 2026",
+      "datetime": "2026-06-13T05:09:06+08:00",
+      "title": "Larin menyelamatkan mata bersejarah Kanada",
+      "excerpt": "Kanada seri 1-1 dengan Bosnia dan Herzegovina selepas pemain gantian Cyle Larin menyamakan kedudukan pada minit ke-78. Jovo Lukic terlebih dahulu meletakkan Bosnia di depan menerusi situasi bola mati.",
+      "analysis": "Mata pertama Kanada dalam sejarah Piala Dunia mengelakkan tekanan awal daripada berubah menjadi krisis dalam Kumpulan B. Namun, kegagalan menyudahkan penguasaan dan kelemahan mempertahankan bola mati perlu diperbaiki sebelum bertemu Qatar dan Switzerland. Impak segera Larin turut memberi Jesse Marsch pilihan sama ada mengekalkannya sebagai pencetus dari bangku simpanan atau mengembalikannya ke kesebelasan utama.",
+      "confidence": "Tinggi",
+      "sources": [
+        {
+          "name": "GOAL",
+          "url": "https://www.goal.com/en/lists/canada-bosnia-herzegovina-player-ratings-world-cup-2026-cyle-larin/blt8c4e9f2a6d173b50",
+          "publishedAt": "13 Jun 2026"
+        },
+        {
+          "name": "Associated Press",
+          "url": "https://apnews.com/article/c58d5a51d827dd0456fe56e65eca1518",
+          "publishedAt": "13 Jun 2026"
+        },
+        {
+          "name": "The Guardian",
+          "url": "https://www.theguardian.com/football/live/2026/jun/12/canada-v-bosnia-and-herzegovina-world-cup-2026-live",
+          "publishedAt": "13 Jun 2026"
+        }
+      ]
+    },
+    {
+      "id": "korea-selatan-kebangkitan-czechia-2026-06-13",
+      "category": "Pasukan",
+      "date": "13 Jun 2026",
+      "datetime": "2026-06-13T00:05:19+08:00",
+      "title": "Hwang memacu kebangkitan Korea Selatan",
+      "excerpt": "Korea Selatan bangkit menewaskan Czechia 2-1 menerusi gol Hwang In-beom dan Oh Hyeon-gyu selepas ketinggalan kepada tandukan Ladislav Krejci. Hwang turut mencipta gol kemenangan pada minit ke-80.",
+      "analysis": "Tiga mata ini memberi Korea Selatan ruang bernafas dalam Kumpulan A sebelum pertemuan dengan Mexico. Keupayaan Hwang mengubah tempo menunjukkan Korea mempunyai jalan serangan selain bergantung kepada Son Heung-min. Pada masa sama, gol Czechia daripada lontaran jauh mengingatkan bahawa organisasi bola mati masih menjadi risiko nyata.",
+      "confidence": "Tinggi",
+      "sources": [
+        {
+          "name": "OneFootball",
+          "url": "https://onefootball.com/en/news/hwang-in-beom-sparks-south-koreas-comeback-win-over-czechia-41324782",
+          "publishedAt": "13 Jun 2026"
+        },
+        {
+          "name": "Associated Press",
+          "url": "https://apnews.com/article/496e7772dde95ca0af90b5074fdb13d9",
+          "publishedAt": "13 Jun 2026"
+        },
+        {
+          "name": "The Guardian",
+          "url": "https://www.theguardian.com/football/live/2026/jun/12/fifa-world-cup-2026-live-south-korea-v-czechia-updates-kor-vs-cze-group-a-match-score-latest",
+          "publishedAt": "13 Jun 2026"
+        }
+      ]
+    },
+    {
+      "id": "mexico-disiplin-selepas-menang-2026-06-13",
+      "category": "Analisis",
+      "date": "13 Jun 2026",
+      "datetime": "2026-06-13T06:30:00+08:00",
+      "title": "Mexico menang, tetapi disiplin menjadi amaran",
+      "excerpt": "Mexico membuka kejohanan dengan kemenangan 2-0 ke atas Afrika Selatan melalui Julian Quinones dan Raul Jimenez. Perlawanan pembukaan itu turut menghasilkan tiga kad merah.",
+      "analysis": "Kemenangan memberi Mexico asas terbaik untuk mengawal Kumpulan A, tetapi kad merah Cesar Montes boleh mengganggu kesinambungan barisan pertahanan. Jimenez pula menunjukkan nilai pengalaman dalam perlawanan yang tegang dan tidak kemas. Menjelang pertemuan dengan Korea Selatan, Mexico perlu mengekalkan intensiti tanpa membiarkan emosi membuka ruang kepada lawan yang baru membuktikan kemampuan bangkit.",
+      "confidence": "Tinggi",
+      "sources": [
+        {
+          "name": "Associated Press",
+          "url": "https://apnews.com/article/4c9de5961b70f1b2cc6e754ff2db57c2",
+          "publishedAt": "12 Jun 2026"
+        },
+        {
+          "name": "The Guardian",
+          "url": "https://www.theguardian.com/football/2026/jun/12/football-daily-newsletter-mexico-azteca-world-cup-2026-opener",
+          "publishedAt": "12 Jun 2026"
+        }
+      ]
+    },
+    {
+      "id": "scotland-haiti-peluang-wajib-2026-06-13",
+      "category": "Analisis",
+      "date": "13 Jun 2026",
+      "datetime": "2026-06-13T08:30:00+08:00",
+      "title": "Scotland berdepan peluang yang tidak boleh disia-siakan",
+      "excerpt": "Scotland kembali ke Piala Dunia selepas 28 tahun dengan membuka kempen menentang Haiti di Boston. Scott McTominay kembali berlatih selepas masalah kesihatan ringan.",
+      "analysis": "Dengan Brazil dan Maghribi menunggu selepas ini, kemenangan ke atas Haiti hampir menjadi keperluan untuk cita-cita Scotland melepasi peringkat kumpulan buat kali pertama. Cabaran Steve Clarke ialah menyerang secara proaktif tanpa kehilangan struktur yang selama ini menjadi kekuatan pasukannya. Tekanan sejarah juga perlu diurus agar pengalaman pemain tidak bertukar menjadi permainan terlalu berhati-hati.",
+      "confidence": "Sederhana",
+      "sources": [
+        {
+          "name": "The Guardian",
+          "url": "https://www.theguardian.com/football/2026/jun/12/scotland-world-cup-football-haiti-steve-clarke",
+          "publishedAt": "13 Jun 2026"
+        }
+      ]
+    },
+    {
+      "id": "australia-turkiye-generasi-baharu-2026-06-13",
+      "category": "Pasukan",
+      "date": "13 Jun 2026",
+      "datetime": "2026-06-13T09:15:00+08:00",
+      "title": "Generasi baharu Australia diuji Türkiye",
+      "excerpt": "Australia memulakan Kumpulan D menentang Türkiye di Vancouver dengan 17 pemain skuadnya bakal membuat penampilan Piala Dunia pertama. Maty Ryan dan Mathew Leckie pula membawa pengalaman kejohanan keempat.",
+      "analysis": "Campuran pemain baharu dan teras veteran menjadikan perlawanan pertama ukuran penting terhadap kelajuan proses peralihan Australia. Türkiye mempunyai kreativiti individu yang boleh menghukum kesilapan ketika Australia cuba membina serangan, jadi kawalan ruang di tengah akan menentukan rentak. Dalam format yang turut membuka laluan kepada pasukan tempat ketiga, satu mata masih bernilai tetapi kemenangan akan mengubah tekanan sebelum bertemu Amerika Syarikat.",
+      "confidence": "Sederhana",
+      "sources": [
+        {
+          "name": "Socceroos",
+          "url": "https://socceroos.com.au/news/every-group-d-fifa-world-cup-2026tm-squad",
+          "publishedAt": "12 Jun 2026"
+        },
+        {
+          "name": "The Guardian",
+          "url": "https://www.theguardian.com/football/2026/jun/13/socceroos-world-cup-australia-football-team-preview",
+          "publishedAt": "13 Jun 2026"
+        },
+        {
+          "name": "Associated Press",
+          "url": "https://apnews.com/article/a18d9dffbdcd6a75905f7163520666e2",
+          "publishedAt": "13 Jun 2026"
+        }
+      ]
+    }
+  ]
+};
