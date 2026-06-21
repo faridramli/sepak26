@@ -15,7 +15,7 @@ const groups = {
     ["Brazil", "BRA", "🇧🇷", 5],
     ["Maghribi", "MAR", "🇲🇦", 12],
     ["Haiti", "HAI", "🇭🇹", 83],
-    ["Scotland", "SCO", "🏴", 44],
+    ["Scotland", "SCO", "🏴󠁧󠁢󠁳󠁣󠁴󠁿", 44],
   ],
   D: [
     ["Amerika Syarikat", "USA", "🇺🇸", 16],
@@ -66,7 +66,7 @@ const groups = {
     ["DR Congo", "COD", "🇨🇩", 55],
   ],
   L: [
-    ["England", "ENG", "🏴", 4],
+    ["England", "ENG", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", 4],
     ["Croatia", "CRO", "🇭🇷", 11],
     ["Ghana", "GHA", "🇬🇭", 48],
     ["Panama", "PAN", "🇵🇦", 32],
@@ -1278,18 +1278,8 @@ function posLabel(pos) {
   return map[pos] || pos;
 }
 
-function openTeamDialog(code) {
-  const t = teamByCode[code];
-  const sq = squads[code];
-  if (!t) return;
-
-  const dialog = document.querySelector("#team-dialog");
-  const content = document.querySelector("#team-dialog-content");
-
-  const starters = sq?.players || [];
-  const subs = sq?.subs || [];
-
-  const playerRows = (list) => list.map(p => `
+function playerRowsHtml(list) {
+  return list.map(p => `
     <div class="player-row">
       <span class="no">${String(p.no).padStart(2, "0")}</span>
       <span class="pos ${p.pos}">${posLabel(p.pos)}</span>
@@ -1298,234 +1288,121 @@ function openTeamDialog(code) {
         <span class="pmeta">${p.age ? p.age + " thn" : ""}${p.age && p.club ? " · " : ""}${p.club || ""}</span>
       </span>
     </div>`).join("");
+}
 
-  const contrastFor = (hex) => {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    return (r*299 + g*587 + b*114) / 1000 > 128 ? "#111" : "#fff";
-  };
-
-  const jerseyBlock = (color, label) => color ? `
-    <div class="jersey-item">
-      <span class="jersey-label">${label}</span>
-      <div class="jersey-swatch">
-        <div class="swatch" style="background:${color}; border-color: rgba(0,0,0,0.15);"></div>
-        <span>${sq[label === "JERSI HOME" ? "jerseyHomeName" : "jerseyAwayName"] || color}</span>
-      </div>
-    </div>` : "";
-
-  content.innerHTML = `
-    <div class="team-dialog-head">
-      <span class="flag">${t.flag}</span>
-      <h2>${t.name}</h2>
-      <div class="team-dialog-meta">
-        <span>KUMPULAN <strong>${t.group}</strong></span>
-        <span>·</span>
-        <span>FIFA RANKING <strong>#${t.rank}</strong></span>
-      </div>
-      <div class="team-dialog-info">
-        <div>
-          <span>PENGURUS</span>
-          <strong>${sq?.manager || "—"}</strong>
-        </div>
-        <div>
-          <span>KEM LATIHAN WC2026</span>
-          <strong>${sq?.trainingBase || "—"}</strong>
-        </div>
-      </div>
+function teamDetailHtml(code) {
+  const t = teamByCode[code];
+  const sq = squads[code];
+  if (!t) return "";
+  const starters = sq?.players || [];
+  const subs = sq?.subs || [];
+  return `
+    <div class="team-detail-meta">
+      <span>Pengurus <strong>${sq?.manager || "—"}</strong></span>
+      <span>Kem latihan <strong>${sq?.trainingBase || "—"}</strong></span>
+      ${sq?.jerseyHomeName ? `<span>Jersi utama <strong>${sq.jerseyHomeName}</strong></span>` : ""}
+      ${sq?.jerseyAwayName ? `<span>Jersi away <strong>${sq.jerseyAwayName}</strong></span>` : ""}
     </div>
-    <div class="team-dialog-body">
-      ${starters.length ? `
-        <div class="squad-section">
-          <div class="squad-label">
-            Pemain Utama
-            <span class="player-count">${starters.length} pemain</span>
-          </div>
-          <div class="player-list">${playerRows(starters)}</div>
-        </div>` : ""}
-      ${subs.length ? `
-        <div class="squad-section">
-          <div class="squad-label">
-            Pemain Ganti
-            <span class="player-count">${subs.length} pemain</span>
-          </div>
-          <div class="player-list">${playerRows(subs)}</div>
-        </div>` : ""}
-      ${sq?.jerseyHome || sq?.jerseyAway ? `
-        <div class="jersey-section">
-          ${jerseyBlock(sq.jerseyHome, "JERSI HOME")}
-          ${jerseyBlock(sq.jerseyAway, "JERSI AWAY")}
-        </div>` : ""}
-    </div>`;
+    ${starters.length ? `
+      <div class="squad-section">
+        <div class="squad-label">Pemain Utama<span class="player-count">${starters.length} pemain</span></div>
+        <div class="player-list">${playerRowsHtml(starters)}</div>
+      </div>` : ""}
+    ${subs.length ? `
+      <div class="squad-section">
+        <div class="squad-label">Pemain Ganti<span class="player-count">${subs.length} pemain</span></div>
+        <div class="player-list">${playerRowsHtml(subs)}</div>
+      </div>` : ""}`;
+}
 
-  dialog.showModal();
+function toggleTeamRowExpand(code) {
+  const row = document.querySelector(`.team-row[data-team-code="${code}"]`);
+  const expand = document.querySelector(`#team-expand-${code}`);
+  if (!row || !expand) return;
+  const isOpen = row.classList.contains("is-open");
+  document.querySelectorAll(".team-row.is-open").forEach((r) => r.classList.remove("is-open"));
+  document.querySelectorAll(".team-row-expand.is-open").forEach((e) => e.classList.remove("is-open"));
+  if (!isOpen) {
+    row.classList.add("is-open");
+    expand.classList.add("is-open");
+    expand.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
 let matches = [
-  {
-    id: 1,
-    date: "11 Jun 2026",
-    time: "03:00",
-    home: "MEX",
-    away: "RSA",
-    group: "A",
-    venue: "Estadio Azteca, Mexico City",
-    status: "finished",
-    score: [2, 0],
-    stats: null,
-  },
-  {
-    id: 2,
-    date: "12 Jun 2026",
-    time: "10:00",
-    home: "KOR",
-    away: "CZE",
-    group: "A",
-    venue: "Estadio Akron, Guadalajara",
-    status: "finished",
-    score: [2, 1],
-    stats: null,
-  },
-  {
-    id: 3,
-    date: "13 Jun 2026",
-    time: "03:00",
-    home: "CAN",
-    away: "BIH",
-    group: "B",
-    venue: "BMO Field, Toronto",
-    status: "upcoming",
-    stats: null,
-  },
-  {
-    id: 4,
-    date: "13 Jun 2026",
-    time: "06:00",
-    home: "SUI",
-    away: "QAT",
-    group: "B",
-    venue: "Levi's Stadium, Santa Clara",
-    status: "upcoming",
-    stats: null,
-  },
-  {
-    id: 5,
-    date: "13 Jun 2026",
-    time: "09:00",
-    home: "BRA",
-    away: "SCO",
-    group: "C",
-    venue: "MetLife Stadium, New York / New Jersey",
-    status: "upcoming",
-    stats: null,
-  },
-  {
-    id: 6,
-    date: "14 Jun 2026",
-    time: "00:00",
-    home: "MAR",
-    away: "HAI",
-    group: "C",
-    venue: "Gillette Stadium, Boston",
-    status: "upcoming",
-    stats: null,
-  },
-  {
-    id: 7,
-    date: "14 Jun 2026",
-    time: "03:00",
-    home: "USA",
-    away: "TUR",
-    group: "D",
-    venue: "SoFi Stadium, Los Angeles",
-    status: "upcoming",
-    stats: null,
-  },
-  {
-    id: 8,
-    date: "14 Jun 2026",
-    time: "06:00",
-    home: "PAR",
-    away: "AUS",
-    group: "D",
-    venue: "BC Place, Vancouver",
-    status: "upcoming",
-    stats: null,
-  },
-  {
-    id: 9,
-    date: "15 Jun 2026",
-    time: "03:00",
-    home: "GER",
-    away: "ECU",
-    group: "E",
-    venue: "Lincoln Financial Field, Philadelphia",
-    status: "upcoming",
-    stats: null,
-  },
-  {
-    id: 10,
-    date: "16 Jun 2026",
-    time: "09:00",
-    home: "ARG",
-    away: "JOR",
-    group: "J",
-    venue: "Hard Rock Stadium, Miami",
-    status: "upcoming",
-    stats: null,
-  },
+  { id: 1, date: "12 Jun 2026", time: "01:00", home: "MEX", away: "RSA", group: "A", venue: "Estadio Azteca, Mexico City", status: "finished", score: [2, 0], stats: null },
+  { id: 2, date: "12 Jun 2026", time: "04:00", home: "KOR", away: "CZE", group: "A", venue: "Estadio Akron, Guadalajara", status: "finished", score: [2, 1], stats: null },
+  { id: 3, date: "13 Jun 2026", time: "01:00", home: "CAN", away: "BIH", group: "B", venue: "BMO Field, Toronto", status: "finished", score: [1, 1], stats: null },
+  { id: 4, date: "13 Jun 2026", time: "04:00", home: "USA", away: "PAR", group: "D", venue: "SoFi Stadium, Los Angeles", status: "finished", score: [4, 1], stats: null },
+  { id: 5, date: "14 Jun 2026", time: "01:00", home: "QAT", away: "SUI", group: "B", venue: "Levi's Stadium, Santa Clara", status: "finished", score: [1, 1], stats: null },
+  { id: 6, date: "14 Jun 2026", time: "04:00", home: "BRA", away: "MAR", group: "C", venue: "MetLife Stadium, New York / New Jersey", status: "finished", score: [1, 1], stats: null },
+  { id: 7, date: "14 Jun 2026", time: "07:00", home: "SCO", away: "HAI", group: "C", venue: "Gillette Stadium, Boston", status: "finished", score: [1, 0], stats: null },
+  { id: 8, date: "15 Jun 2026", time: "01:00", home: "AUS", away: "TUR", group: "D", venue: "BC Place, Vancouver", status: "finished", score: [2, 0], stats: null },
+  { id: 9, date: "15 Jun 2026", time: "04:00", home: "GER", away: "CUW", group: "E", venue: "NRG Stadium, Houston", status: "finished", score: [7, 1], stats: null },
+  { id: 10, date: "15 Jun 2026", time: "07:00", home: "CIV", away: "ECU", group: "E", venue: "Lincoln Financial Field, Philadelphia", status: "finished", score: [1, 0], stats: null },
+  { id: 11, date: "15 Jun 2026", time: "10:00", home: "NED", away: "JPN", group: "F", venue: "AT&T Stadium, Dallas", status: "finished", score: [2, 2], stats: null },
+  { id: 12, date: "15 Jun 2026", time: "01:00", home: "SWE", away: "TUN", group: "F", venue: "Estadio Akron, Guadalajara", status: "finished", score: [5, 1], stats: null },
+  { id: 13, date: "16 Jun 2026", time: "01:00", home: "BEL", away: "EGY", group: "G", venue: "Lumen Field, Seattle", status: "finished", score: [1, 1], stats: null },
+  { id: 14, date: "16 Jun 2026", time: "04:00", home: "IRN", away: "NZL", group: "G", venue: "SoFi Stadium, Los Angeles", status: "finished", score: [2, 2], stats: null },
+  { id: 15, date: "16 Jun 2026", time: "07:00", home: "ESP", away: "CPV", group: "H", venue: "Mercedes-Benz Stadium, Atlanta", status: "finished", score: [0, 0], stats: null },
+  { id: 16, date: "16 Jun 2026", time: "10:00", home: "KSA", away: "URU", group: "H", venue: "Hard Rock Stadium, Miami", status: "finished", score: [1, 1], stats: null },
+  { id: 17, date: "17 Jun 2026", time: "01:00", home: "FRA", away: "SEN", group: "I", venue: "MetLife Stadium, New York / New Jersey", status: "finished", score: [3, 1], stats: null },
+  { id: 18, date: "17 Jun 2026", time: "04:00", home: "NOR", away: "IRQ", group: "I", venue: "Gillette Stadium, Boston", status: "finished", score: [4, 1], stats: null },
+  { id: 19, date: "17 Jun 2026", time: "07:00", home: "ARG", away: "ALG", group: "J", venue: "Arrowhead Stadium, Kansas City", status: "finished", score: [3, 0], stats: null },
+  { id: 20, date: "17 Jun 2026", time: "10:00", home: "AUT", away: "JOR", group: "J", venue: "Levi's Stadium, Santa Clara", status: "finished", score: [3, 1], stats: null },
+  { id: 21, date: "18 Jun 2026", time: "01:00", home: "POR", away: "COD", group: "K", venue: "NRG Stadium, Houston", status: "finished", score: [1, 1], stats: null },
+  { id: 22, date: "18 Jun 2026", time: "04:00", home: "UZB", away: "COL", group: "K", venue: "Estadio Azteca, Mexico City", status: "finished", score: [1, 3], stats: null },
+  { id: 23, date: "18 Jun 2026", time: "07:00", home: "ENG", away: "CRO", group: "L", venue: "AT&T Stadium, Dallas", status: "finished", score: [4, 2], stats: null },
+  { id: 24, date: "18 Jun 2026", time: "10:00", home: "GHA", away: "PAN", group: "L", venue: "BMO Field, Toronto", status: "finished", score: [1, 0], stats: null },
+  { id: 25, date: "19 Jun 2026", time: "01:00", home: "CZE", away: "RSA", group: "A", venue: "Mercedes-Benz Stadium, Atlanta", status: "finished", score: [1, 1], stats: null },
+  { id: 26, date: "19 Jun 2026", time: "04:00", home: "MEX", away: "KOR", group: "A", venue: "Estadio Akron, Guadalajara", status: "finished", score: [1, 0], stats: null },
+  { id: 27, date: "19 Jun 2026", time: "07:00", home: "SUI", away: "BIH", group: "B", venue: "SoFi Stadium, Los Angeles", status: "finished", score: [4, 1], stats: null },
+  { id: 28, date: "19 Jun 2026", time: "10:00", home: "CAN", away: "QAT", group: "B", venue: "BC Place, Vancouver", status: "finished", score: [6, 0], stats: null },
+  { id: 29, date: "20 Jun 2026", time: "01:00", home: "SCO", away: "MAR", group: "C", venue: "Gillette Stadium, Boston", status: "finished", score: [0, 1], stats: null },
+  { id: 30, date: "20 Jun 2026", time: "04:00", home: "BRA", away: "HAI", group: "C", venue: "Lincoln Financial Field, Philadelphia", status: "finished", score: [3, 0], stats: null },
+  { id: 31, date: "20 Jun 2026", time: "07:00", home: "USA", away: "AUS", group: "D", venue: "Lumen Field, Seattle", status: "finished", score: [2, 0], stats: null },
+  { id: 32, date: "20 Jun 2026", time: "10:00", home: "PAR", away: "TUR", group: "D", venue: "Levi's Stadium, Santa Clara", status: "finished", score: [1, 0], stats: null },
+  { id: 33, date: "21 Jun 2026", time: "01:00", home: "GER", away: "CIV", group: "E", venue: "BMO Field, Toronto", status: "finished", score: [2, 1], stats: null },
+  { id: 34, date: "21 Jun 2026", time: "04:00", home: "ECU", away: "CUW", group: "E", venue: "Arrowhead Stadium, Kansas City", status: "finished", score: [0, 0], stats: null },
+  { id: 35, date: "21 Jun 2026", time: "07:00", home: "NED", away: "SWE", group: "F", venue: "NRG Stadium, Houston", status: "finished", score: [5, 1], stats: null },
+  { id: 36, date: "21 Jun 2026", time: "10:00", home: "JPN", away: "TUN", group: "F", venue: "Estadio Akron, Guadalajara", status: "finished", score: [4, 0], stats: null },
+  { id: 37, date: "22 Jun 2026", time: "01:00", home: "BEL", away: "IRN", group: "G", venue: "SoFi Stadium, Los Angeles", status: "upcoming", stats: null },
+  { id: 38, date: "22 Jun 2026", time: "04:00", home: "NZL", away: "EGY", group: "G", venue: "BC Place, Vancouver", status: "upcoming", stats: null },
+  { id: 39, date: "22 Jun 2026", time: "07:00", home: "ESP", away: "KSA", group: "H", venue: "Mercedes-Benz Stadium, Atlanta", status: "upcoming", stats: null },
+  { id: 40, date: "22 Jun 2026", time: "10:00", home: "URU", away: "CPV", group: "H", venue: "Hard Rock Stadium, Miami", status: "upcoming", stats: null },
+  { id: 41, date: "23 Jun 2026", time: "01:00", home: "FRA", away: "IRQ", group: "I", venue: "Lincoln Financial Field, Philadelphia", status: "upcoming", stats: null },
+  { id: 42, date: "23 Jun 2026", time: "04:00", home: "NOR", away: "SEN", group: "I", venue: "MetLife Stadium, New York / New Jersey", status: "upcoming", stats: null },
+  { id: 43, date: "23 Jun 2026", time: "07:00", home: "ARG", away: "AUT", group: "J", venue: "AT&T Stadium, Dallas", status: "upcoming", stats: null },
+  { id: 44, date: "23 Jun 2026", time: "10:00", home: "JOR", away: "ALG", group: "J", venue: "Levi's Stadium, Santa Clara", status: "upcoming", stats: null },
+  { id: 45, date: "24 Jun 2026", time: "01:00", home: "POR", away: "UZB", group: "K", venue: "NRG Stadium, Houston", status: "upcoming", stats: null },
+  { id: 46, date: "24 Jun 2026", time: "04:00", home: "COL", away: "COD", group: "K", venue: "Estadio Akron, Guadalajara", status: "upcoming", stats: null },
+  { id: 47, date: "24 Jun 2026", time: "07:00", home: "ENG", away: "GHA", group: "L", venue: "Gillette Stadium, Boston", status: "upcoming", stats: null },
+  { id: 48, date: "24 Jun 2026", time: "10:00", home: "PAN", away: "CRO", group: "L", venue: "BMO Field, Toronto", status: "upcoming", stats: null },
+  { id: 49, date: "25 Jun 2026", time: "01:00", home: "CZE", away: "MEX", group: "A", venue: "Estadio Azteca, Mexico City", status: "upcoming", stats: null },
+  { id: 50, date: "25 Jun 2026", time: "04:00", home: "RSA", away: "KOR", group: "A", venue: "Estadio BBVA, Monterrey", status: "upcoming", stats: null },
+  { id: 51, date: "25 Jun 2026", time: "07:00", home: "SUI", away: "CAN", group: "B", venue: "BC Place, Vancouver", status: "upcoming", stats: null },
+  { id: 52, date: "25 Jun 2026", time: "10:00", home: "BIH", away: "QAT", group: "B", venue: "Lumen Field, Seattle", status: "upcoming", stats: null },
+  { id: 53, date: "25 Jun 2026", time: "01:00", home: "SCO", away: "BRA", group: "C", venue: "Hard Rock Stadium, Miami", status: "upcoming", stats: null },
+  { id: 54, date: "25 Jun 2026", time: "04:00", home: "MAR", away: "HAI", group: "C", venue: "Mercedes-Benz Stadium, Atlanta", status: "upcoming", stats: null },
+  { id: 55, date: "26 Jun 2026", time: "01:00", home: "TUR", away: "USA", group: "D", venue: "SoFi Stadium, Los Angeles", status: "upcoming", stats: null },
+  { id: 56, date: "26 Jun 2026", time: "04:00", home: "PAR", away: "AUS", group: "D", venue: "Levi's Stadium, Santa Clara", status: "upcoming", stats: null },
+  { id: 57, date: "26 Jun 2026", time: "07:00", home: "ECU", away: "GER", group: "E", venue: "MetLife Stadium, New York / New Jersey", status: "upcoming", stats: null },
+  { id: 58, date: "26 Jun 2026", time: "10:00", home: "CUW", away: "CIV", group: "E", venue: "Lincoln Financial Field, Philadelphia", status: "upcoming", stats: null },
+  { id: 59, date: "26 Jun 2026", time: "01:00", home: "JPN", away: "SWE", group: "F", venue: "AT&T Stadium, Dallas", status: "upcoming", stats: null },
+  { id: 60, date: "26 Jun 2026", time: "04:00", home: "TUN", away: "NED", group: "F", venue: "Arrowhead Stadium, Kansas City", status: "upcoming", stats: null },
+  { id: 61, date: "27 Jun 2026", time: "01:00", home: "EGY", away: "IRN", group: "G", venue: "Lumen Field, Seattle", status: "upcoming", stats: null },
+  { id: 62, date: "27 Jun 2026", time: "04:00", home: "NZL", away: "BEL", group: "G", venue: "BC Place, Vancouver", status: "upcoming", stats: null },
+  { id: 63, date: "27 Jun 2026", time: "07:00", home: "CPV", away: "KSA", group: "H", venue: "NRG Stadium, Houston", status: "upcoming", stats: null },
+  { id: 64, date: "27 Jun 2026", time: "10:00", home: "URU", away: "ESP", group: "H", venue: "Estadio Akron, Guadalajara", status: "upcoming", stats: null },
+  { id: 65, date: "27 Jun 2026", time: "01:00", home: "NOR", away: "FRA", group: "I", venue: "Gillette Stadium, Boston", status: "upcoming", stats: null },
+  { id: 66, date: "27 Jun 2026", time: "04:00", home: "SEN", away: "IRQ", group: "I", venue: "BMO Field, Toronto", status: "upcoming", stats: null },
+  { id: 67, date: "28 Jun 2026", time: "01:00", home: "JOR", away: "ARG", group: "J", venue: "AT&T Stadium, Dallas", status: "upcoming", stats: null },
+  { id: 68, date: "28 Jun 2026", time: "04:00", home: "ALG", away: "AUT", group: "J", venue: "Arrowhead Stadium, Kansas City", status: "upcoming", stats: null },
+  { id: 69, date: "28 Jun 2026", time: "07:00", home: "COL", away: "POR", group: "K", venue: "Hard Rock Stadium, Miami", status: "upcoming", stats: null },
+  { id: 70, date: "28 Jun 2026", time: "10:00", home: "COD", away: "UZB", group: "K", venue: "Mercedes-Benz Stadium, Atlanta", status: "upcoming", stats: null },
+  { id: 71, date: "28 Jun 2026", time: "01:00", home: "PAN", away: "ENG", group: "L", venue: "MetLife Stadium, New York / New Jersey", status: "upcoming", stats: null },
+  { id: 72, date: "28 Jun 2026", time: "04:00", home: "CRO", away: "GHA", group: "L", venue: "Lincoln Financial Field, Philadelphia", status: "upcoming", stats: null },
 ];
-
-const fallbackNews = [
-  {
-    category: "Kejohanan",
-    date: "12 Jun 2026",
-    title: "Kejohanan 48 pasukan membuka lembaran baharu bola sepak dunia",
-    excerpt: "Format diperluas membawa lebih banyak negara, cerita dan pertembungan rentas benua ke pentas terbesar.",
-  },
-  {
-    category: "Pasukan",
-    date: "12 Jun 2026",
-    title: "Mexico bermula dengan tenaga tuan rumah",
-    excerpt: "Sorakan di Mexico City menjadi latar kepada permulaan kempen yang penuh keyakinan.",
-  },
-  {
-    category: "Analisis",
-    date: "12 Jun 2026",
-    title: "Apa yang berubah dalam format 12 kumpulan?",
-    excerpt: "Dua pasukan teratas dan lapan pasukan tempat ketiga terbaik akan mara ke pusingan 32.",
-  },
-  {
-    category: "Pasukan",
-    date: "11 Jun 2026",
-    title: "Kanada bersedia menjadikan Toronto kubu sendiri",
-    excerpt: "Skuad tuan rumah mahu menggunakan intensiti dan sokongan penyokong untuk mengawal kumpulan B.",
-  },
-  {
-    category: "Analisis",
-    date: "11 Jun 2026",
-    title: "Lima pemain muda yang wajar diberi perhatian",
-    excerpt: "Generasi baharu tiba dengan kelajuan, keberanian dan reputasi yang semakin besar.",
-  },
-  {
-    category: "Kejohanan",
-    date: "10 Jun 2026",
-    title: "16 bandar tuan rumah bersedia menyambut dunia",
-    excerpt: "Dari Mexico City ke Vancouver dan Miami, pentas sudah tersedia untuk 104 perlawanan.",
-  },
-];
-
-let newsPayload = window.SEPAK26_NEWS || {
-  metadata: {
-    updatedAt: null,
-    sourceCount: 0,
-    status: "fallback",
-    methodology: "Paparan sandaran tempatan.",
-  },
-  articles: fallbackNews,
-};
-let news = newsPayload.articles;
 
 const stadiums = [
   {
@@ -1642,32 +1519,6 @@ const stadiums = [
   },
 ];
 
-const STADIUM_MEDIA = {
-  1: ["assets/stadiums/01-estadio-azteca.jpg", "Vista aérea del Estadio Azteca - 2026 - 02.jpg"],
-  2: ["assets/stadiums/02-estadio-akron.jpg", "Estadio Akron 02-07-2022 cabecera sur lado derecho (3).jpg"],
-  3: ["assets/stadiums/03-estadio-bbva.jpg", "Mexico Guadalupe Monterrey Estadio BBVA Bancomer fifa world cup 2026 6.JPG"],
-  4: ["assets/stadiums/04-att-stadium.jpg", "Arlington June 2020 4 (AT&T Stadium).jpg"],
-  5: ["assets/stadiums/05-nrg-stadium.jpg", "Nrg stadium.jpg"],
-  6: ["assets/stadiums/06-arrowhead-stadium.jpg", "Aerial view of Arrowhead Stadium 08-31-2013.jpg"],
-  7: ["assets/stadiums/07-mercedes-benz-stadium.jpg", "Mercedes Benz Stadium time lapse capture 2017-08-13.jpg"],
-  8: ["assets/stadiums/08-hard-rock-stadium.jpg", "Hard Rock Stadium for Super Bowl LIV (49606710103).jpg"],
-  9: ["assets/stadiums/09-gillette-stadium.jpg", "Gillette Stadium (Top View).jpg"],
-  10: ["assets/stadiums/10-lincoln-financial-field.jpg", "Lincoln Financial Field (Aerial view).jpg"],
-  11: ["assets/stadiums/11-metlife-stadium.jpg", "Metlife stadium (Aerial view).jpg"],
-  12: ["assets/stadiums/12-bmo-field.jpg", "Toronto BMO Field in 2024.jpg"],
-  13: ["assets/stadiums/13-bc-place.jpg", "BC Place 2015 Women's FIFA World Cup.jpg"],
-  14: ["assets/stadiums/14-lumen-field.jpg", "2025 FIFA Club World Cup - Seattle Sounders FC vs. Atlético Madrid - 05.jpg"],
-  15: ["assets/stadiums/15-levis-stadium.jpg", "Levi's Stadium in February 2016 prior to Super Bowl 50 (24398261729).jpg"],
-  16: ["assets/stadiums/16-sofi-stadium.jpg", "SoFi Stadium 2023.jpg"],
-};
-
-stadiums.forEach((stadium) => {
-  const [image, commonsFile] = STADIUM_MEDIA[stadium.id];
-  stadium.image = image;
-  stadium.imageCredit = "Wikimedia Commons";
-  stadium.imageSource = `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(commonsFile).replaceAll("%20", "_")}`;
-});
-
 const DATA_SOURCES = [
   {
     id: "worldcup26",
@@ -1693,15 +1544,21 @@ let sourceHealth = Object.fromEntries(DATA_SOURCES.map((source) => [source.id, f
 let lastVerifiedAt = null;
 let verificationLoading = false;
 
+// ================================================================
+// DATA RAMALAN — kebarangkalian model statistik (rating + Poisson,
+// 20,000 simulasi Monte Carlo), dipadankan ke kod pasukan di atas.
+// ================================================================
+const ramalanData = {"teams": [{"code": "FRA", "name": "Perancis", "flag": "🇫🇷", "group": "I", "rank": 3, "rating": 1875, "pts": 3, "gd": 2, "qual": 100.0, "gw": 99.0, "ru": 0.9, "r32": 100.0, "r16": 94.5, "qf": 75.4, "sf": 58.7, "final": 41.2, "champ": 28.3, "host": false}, {"code": "ESP", "name": "Sepanyol", "flag": "🇪🇸", "group": "H", "rank": 2, "rating": 1833, "pts": 1, "gd": 0, "qual": 99.1, "gw": 77.8, "ru": 18.7, "r32": 99.1, "r16": 77.5, "qf": 56.6, "sf": 42.0, "final": 24.0, "champ": 15.1, "host": false}, {"code": "ARG", "name": "Argentina", "flag": "🇦🇷", "group": "J", "rank": 1, "rating": 1806, "pts": 3, "gd": 3, "qual": 100.0, "gw": 90.1, "ru": 9.7, "r32": 100.0, "r16": 73.7, "qf": 59.0, "sf": 40.9, "final": 24.3, "champ": 12.2, "host": false}, {"code": "ENG", "name": "England", "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "group": "L", "rank": 4, "rating": 1785, "pts": 3, "gd": 2, "qual": 100.0, "gw": 98.5, "ru": 1.4, "r32": 100.0, "r16": 89.3, "qf": 59.5, "sf": 38.7, "final": 21.9, "champ": 10.2, "host": false}, {"code": "POR", "name": "Portugal", "flag": "🇵🇹", "group": "K", "rank": 6, "rating": 1768, "pts": 1, "gd": 0, "qual": 98.2, "gw": 51.5, "ru": 41.0, "r32": 98.2, "r16": 76.5, "qf": 51.9, "sf": 29.6, "final": 15.3, "champ": 7.0, "host": false}, {"code": "BRA", "name": "Brazil", "flag": "🇧🇷", "group": "C", "rank": 5, "rating": 1753, "pts": 4, "gd": 3, "qual": 99.9, "gw": 55.4, "ru": 39.4, "r32": 99.9, "r16": 63.8, "qf": 46.1, "sf": 21.2, "final": 11.0, "champ": 4.9, "host": false}, {"code": "NED", "name": "Belanda", "flag": "🇳🇱", "group": "F", "rank": 7, "rating": 1740, "pts": 4, "gd": 4, "qual": 100.0, "gw": 81.3, "ru": 18.3, "r32": 100.0, "r16": 53.8, "qf": 39.0, "sf": 14.8, "final": 7.1, "champ": 3.1, "host": false}, {"code": "MAR", "name": "Maghribi", "flag": "🇲🇦", "group": "C", "rank": 12, "rating": 1728, "pts": 4, "gd": 1, "qual": 99.8, "gw": 42.7, "ru": 50.9, "r32": 99.8, "r16": 58.5, "qf": 40.1, "sf": 15.9, "final": 7.5, "champ": 3.0, "host": false}, {"code": "BEL", "name": "Belgium", "flag": "🇧🇪", "group": "G", "rank": 8, "rating": 1716, "pts": 1, "gd": 0, "qual": 99.6, "gw": 65.1, "ru": 26.1, "r32": 99.6, "r16": 78.7, "qf": 41.9, "sf": 18.8, "final": 7.3, "champ": 3.0, "host": false}, {"code": "MEX", "name": "Mexico", "flag": "🇲🇽", "group": "A", "rank": 15, "rating": 1659, "pts": 6, "gd": 3, "qual": 100.0, "gw": 95.6, "ru": 4.4, "r32": 100.0, "r16": 82.4, "qf": 33.1, "sf": 16.9, "final": 7.7, "champ": 2.8, "host": true}, {"code": "USA", "name": "Amerika Syarikat", "flag": "🇺🇸", "group": "D", "rank": 16, "rating": 1650, "pts": 6, "gd": 5, "qual": 100.0, "gw": 98.8, "ru": 1.1, "r32": 100.0, "r16": 81.4, "qf": 47.8, "sf": 19.2, "final": 6.1, "champ": 2.5, "host": true}, {"code": "GER", "name": "Jerman", "flag": "🇩🇪", "group": "E", "rank": 10, "rating": 1706, "pts": 6, "gd": 7, "qual": 100.0, "gw": 99.3, "ru": 0.7, "r32": 100.0, "r16": 82.5, "qf": 21.2, "sf": 10.7, "final": 4.6, "champ": 1.7, "host": false}, {"code": "COL", "name": "Colombia", "flag": "🇨🇴", "group": "K", "rank": 13, "rating": 1676, "pts": 3, "gd": 2, "qual": 99.7, "gw": 45.6, "ru": 45.2, "r32": 99.7, "r16": 63.7, "qf": 33.5, "sf": 13.9, "final": 5.1, "champ": 1.6, "host": false}, {"code": "CRO", "name": "Croatia", "flag": "🇭🇷", "group": "L", "rank": 11, "rating": 1696, "pts": 0, "gd": -2, "qual": 97.6, "gw": 1.2, "ru": 92.1, "r32": 97.6, "r16": 50.7, "qf": 20.1, "sf": 10.2, "final": 3.3, "champ": 1.3, "host": false}, {"code": "SEN", "name": "Senegal", "flag": "🇸🇳", "group": "I", "rank": 17, "rating": 1667, "pts": 0, "gd": -2, "qual": 95.1, "gw": 0.4, "ru": 77.8, "r32": 95.1, "r16": 65.9, "qf": 28.5, "sf": 10.5, "final": 4.0, "champ": 1.2, "host": false}, {"code": "SUI", "name": "Switzerland", "flag": "🇨🇭", "group": "B", "rank": 18, "rating": 1626, "pts": 4, "gd": 3, "qual": 100.0, "gw": 40.3, "ru": 59.5, "r32": 100.0, "r16": 60.6, "qf": 20.9, "sf": 5.2, "final": 1.7, "champ": 0.4, "host": false}, {"code": "JPN", "name": "Jepun", "flag": "🇯🇵", "group": "F", "rank": 19, "rating": 1634, "pts": 4, "gd": 4, "qual": 90.1, "gw": 13.5, "ru": 60.1, "r32": 90.1, "r16": 30.4, "qf": 15.4, "sf": 4.6, "final": 1.4, "champ": 0.4, "host": false}, {"code": "URU", "name": "Uruguay", "flag": "🇺🇾", "group": "H", "rank": 14, "rating": 1642, "pts": 1, "gd": 0, "qual": 91.0, "gw": 19.9, "ru": 59.9, "r32": 91.0, "r16": 31.5, "qf": 15.6, "sf": 6.5, "final": 1.8, "champ": 0.4, "host": false}, {"code": "CAN", "name": "Kanada", "flag": "🇨🇦", "group": "B", "rank": 28, "rating": 1546, "pts": 4, "gd": 6, "qual": 100.0, "gw": 59.7, "ru": 40.3, "r32": 100.0, "r16": 57.2, "qf": 18.0, "sf": 4.3, "final": 1.2, "champ": 0.2, "host": true}, {"code": "IRN", "name": "Iran", "flag": "🇮🇷", "group": "G", "rank": 20, "rating": 1611, "pts": 1, "gd": 0, "qual": 67.6, "gw": 13.6, "ru": 23.7, "r32": 67.6, "r16": 35.1, "qf": 11.5, "sf": 3.6, "final": 0.9, "champ": 0.2, "host": false}, {"code": "KOR", "name": "Korea Selatan", "flag": "🇰🇷", "group": "A", "rank": 22, "rating": 1581, "pts": 3, "gd": 0, "qual": 98.3, "gw": 4.4, "ru": 84.0, "r32": 98.3, "r16": 43.7, "qf": 11.3, "sf": 1.8, "final": 0.4, "champ": 0.1, "host": false}, {"code": "AUS", "name": "Australia", "flag": "🇦🇺", "group": "D", "rank": 26, "rating": 1574, "pts": 3, "gd": 0, "qual": 99.1, "gw": 0.9, "ru": 89.4, "r32": 99.1, "r16": 42.2, "qf": 8.6, "sf": 2.7, "final": 0.6, "champ": 0.1, "host": false}, {"code": "EGY", "name": "Mesir", "flag": "🇪🇬", "group": "G", "rank": 35, "rating": 1553, "pts": 1, "gd": 0, "qual": 95.9, "gw": 21.3, "ru": 49.6, "r32": 95.9, "r16": 45.2, "qf": 10.6, "sf": 2.4, "final": 0.4, "champ": 0.1, "host": false}, {"code": "AUT", "name": "Austria", "flag": "🇦🇹", "group": "J", "rank": 21, "rating": 1596, "pts": 3, "gd": 2, "qual": 98.5, "gw": 9.7, "ru": 67.8, "r32": 98.5, "r16": 26.9, "qf": 9.7, "sf": 3.1, "final": 0.6, "champ": 0.1, "host": false}, {"code": "RSA", "name": "Afrika Selatan", "flag": "🇿🇦", "group": "A", "rank": 59, "rating": 1359, "pts": 1, "gd": -2, "qual": 11.1, "gw": 0.0, "ru": 9.7, "r32": 11.1, "r16": 1.3, "qf": 0.1, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "CZE", "name": "Czechia", "flag": "🇨🇿", "group": "A", "rank": 39, "rating": 1474, "pts": 1, "gd": -1, "qual": 10.9, "gw": 0.0, "ru": 2.0, "r32": 10.9, "r16": 2.2, "qf": 0.4, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "QAT", "name": "Qatar", "flag": "🇶🇦", "group": "B", "rank": 55, "rating": 1513, "pts": 1, "gd": -6, "qual": 53.9, "gw": 0.0, "ru": 0.0, "r32": 53.9, "r16": 10.9, "qf": 2.5, "sf": 0.4, "final": 0.0, "champ": 0.0, "host": false}, {"code": "BIH", "name": "Bosnia & Herzegovina", "flag": "🇧🇦", "group": "B", "rank": 74, "rating": 1407, "pts": 1, "gd": -3, "qual": 22.8, "gw": 0.0, "ru": 0.1, "r32": 22.8, "r16": 2.0, "qf": 0.2, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "HAI", "name": "Haiti", "flag": "🇭🇹", "group": "C", "rank": 83, "rating": 1226, "pts": 0, "gd": -4, "qual": 0.3, "gw": 0.0, "ru": 0.0, "r32": 0.3, "r16": 0.0, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "SCO", "name": "Scotland", "flag": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "group": "C", "rank": 44, "rating": 1437, "pts": 3, "gd": 0, "qual": 77.2, "gw": 1.8, "ru": 9.7, "r32": 77.2, "r16": 7.6, "qf": 0.8, "sf": 0.1, "final": 0.0, "champ": 0.0, "host": false}, {"code": "PAR", "name": "Paraguay", "flag": "🇵🇾", "group": "D", "rank": 41, "rating": 1335, "pts": 3, "gd": -2, "qual": 18.8, "gw": 0.0, "ru": 4.5, "r32": 18.8, "r16": 0.9, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "TUR", "name": "Turkiye", "flag": "🇹🇷", "group": "D", "rank": 27, "rating": 1468, "pts": 0, "gd": -3, "qual": 53.9, "gw": 0.3, "ru": 4.9, "r32": 53.9, "r16": 5.9, "qf": 0.9, "sf": 0.1, "final": 0.0, "champ": 0.0, "host": false}, {"code": "CUW", "name": "Curacao", "flag": "🇨🇼", "group": "E", "rank": 82, "rating": 1238, "pts": 1, "gd": -6, "qual": 6.6, "gw": 0.0, "ru": 5.1, "r32": 6.6, "r16": 0.3, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "CIV", "name": "Ivory Coast", "flag": "🇨🇮", "group": "E", "rank": 42, "rating": 1526, "pts": 3, "gd": 0, "qual": 98.2, "gw": 0.7, "ru": 91.5, "r32": 98.2, "r16": 32.8, "qf": 6.7, "sf": 1.1, "final": 0.2, "champ": 0.0, "host": false}, {"code": "ECU", "name": "Ecuador", "flag": "🇪🇨", "group": "E", "rank": 24, "rating": 1588, "pts": 1, "gd": -1, "qual": 22.6, "gw": 0.0, "ru": 2.8, "r32": 22.6, "r16": 7.6, "qf": 2.5, "sf": 0.6, "final": 0.1, "champ": 0.0, "host": false}, {"code": "TUN", "name": "Tunisia", "flag": "🇹🇳", "group": "F", "rank": 49, "rating": 1481, "pts": 0, "gd": -8, "qual": 9.2, "gw": 1.1, "ru": 0.3, "r32": 9.2, "r16": 1.4, "qf": 0.3, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "SWE", "name": "Sweden", "flag": "🇸🇪", "group": "F", "rank": 35, "rating": 1487, "pts": 3, "gd": 0, "qual": 93.3, "gw": 4.2, "ru": 21.3, "r32": 93.3, "r16": 14.9, "qf": 2.7, "sf": 0.4, "final": 0.1, "champ": 0.0, "host": false}, {"code": "NZL", "name": "New Zealand", "flag": "🇳🇿", "group": "G", "rank": 86, "rating": 1159, "pts": 1, "gd": 0, "qual": 2.6, "gw": 0.1, "ru": 0.6, "r32": 2.6, "r16": 0.0, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "CPV", "name": "Cape Verde", "flag": "🇨🇻", "group": "H", "rank": 68, "rating": 1301, "pts": 1, "gd": 0, "qual": 32.3, "gw": 0.8, "ru": 10.2, "r32": 32.3, "r16": 0.9, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "KSA", "name": "Arab Saudi", "flag": "🇸🇦", "group": "H", "rank": 58, "rating": 1377, "pts": 1, "gd": 0, "qual": 51.5, "gw": 1.5, "ru": 11.2, "r32": 51.5, "r16": 3.5, "qf": 0.3, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "NOR", "name": "Norway", "flag": "🇳🇴", "group": "I", "rank": 29, "rating": 1456, "pts": 3, "gd": 3, "qual": 89.6, "gw": 0.6, "ru": 21.2, "r32": 89.6, "r16": 19.4, "qf": 2.9, "sf": 0.3, "final": 0.1, "champ": 0.0, "host": false}, {"code": "IRQ", "name": "Iraq", "flag": "🇮🇶", "group": "I", "rank": 57, "rating": 1353, "pts": 0, "gd": -3, "qual": 1.3, "gw": 0.0, "ru": 0.1, "r32": 1.3, "r16": 0.1, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "ALG", "name": "Algeria", "flag": "🇩🇿", "group": "J", "rank": 36, "rating": 1506, "pts": 0, "gd": -3, "qual": 69.2, "gw": 0.2, "ru": 22.3, "r32": 69.2, "r16": 13.4, "qf": 3.2, "sf": 0.5, "final": 0.1, "champ": 0.0, "host": false}, {"code": "JOR", "name": "Jordan", "flag": "🇯🇴", "group": "J", "rank": 62, "rating": 1312, "pts": 0, "gd": -2, "qual": 7.5, "gw": 0.0, "ru": 0.2, "r32": 7.5, "r16": 0.4, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "UZB", "name": "Uzbekistan", "flag": "🇺🇿", "group": "K", "rank": 51, "rating": 1347, "pts": 0, "gd": -2, "qual": 19.9, "gw": 0.1, "ru": 1.3, "r32": 19.9, "r16": 0.6, "qf": 0.1, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "COD", "name": "DR Congo", "flag": "🇨🇩", "group": "K", "rank": 55, "rating": 1413, "pts": 1, "gd": 0, "qual": 56.9, "gw": 2.7, "ru": 12.5, "r32": 56.9, "r16": 4.9, "qf": 0.7, "sf": 0.1, "final": 0.0, "champ": 0.0, "host": false}, {"code": "GHA", "name": "Ghana", "flag": "🇬🇭", "group": "L", "rank": 48, "rating": 1330, "pts": 3, "gd": 1, "qual": 55.0, "gw": 0.2, "ru": 5.5, "r32": 55.0, "r16": 3.0, "qf": 0.3, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "PAN", "name": "Panama", "flag": "🇵🇦", "group": "L", "rank": 32, "rating": 1401, "pts": 0, "gd": -1, "qual": 5.9, "gw": 0.0, "ru": 1.0, "r32": 5.9, "r16": 0.6, "qf": 0.1, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}], "swing": [{"code": "URU", "name": "Uruguay", "flag": "🇺🇾", "group": "H", "rank": 14, "rating": 1642, "pts": 1, "gd": 0, "qual": 91.0, "gw": 19.9, "ru": 59.9, "r32": 91.0, "r16": 31.5, "qf": 15.6, "sf": 6.5, "final": 1.8, "champ": 0.4, "host": false}, {"code": "JPN", "name": "Jepun", "flag": "🇯🇵", "group": "F", "rank": 19, "rating": 1634, "pts": 4, "gd": 4, "qual": 90.1, "gw": 13.5, "ru": 60.1, "r32": 90.1, "r16": 30.4, "qf": 15.4, "sf": 4.6, "final": 1.4, "champ": 0.4, "host": false}, {"code": "NOR", "name": "Norway", "flag": "🇳🇴", "group": "I", "rank": 29, "rating": 1456, "pts": 3, "gd": 3, "qual": 89.6, "gw": 0.6, "ru": 21.2, "r32": 89.6, "r16": 19.4, "qf": 2.9, "sf": 0.3, "final": 0.1, "champ": 0.0, "host": false}, {"code": "SCO", "name": "Scotland", "flag": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "group": "C", "rank": 44, "rating": 1437, "pts": 3, "gd": 0, "qual": 77.2, "gw": 1.8, "ru": 9.7, "r32": 77.2, "r16": 7.6, "qf": 0.8, "sf": 0.1, "final": 0.0, "champ": 0.0, "host": false}, {"code": "ALG", "name": "Algeria", "flag": "🇩🇿", "group": "J", "rank": 36, "rating": 1506, "pts": 0, "gd": -3, "qual": 69.2, "gw": 0.2, "ru": 22.3, "r32": 69.2, "r16": 13.4, "qf": 3.2, "sf": 0.5, "final": 0.1, "champ": 0.0, "host": false}, {"code": "IRN", "name": "Iran", "flag": "🇮🇷", "group": "G", "rank": 20, "rating": 1611, "pts": 1, "gd": 0, "qual": 67.6, "gw": 13.6, "ru": 23.7, "r32": 67.6, "r16": 35.1, "qf": 11.5, "sf": 3.6, "final": 0.9, "champ": 0.2, "host": false}, {"code": "COD", "name": "DR Congo", "flag": "🇨🇩", "group": "K", "rank": 55, "rating": 1413, "pts": 1, "gd": 0, "qual": 56.9, "gw": 2.7, "ru": 12.5, "r32": 56.9, "r16": 4.9, "qf": 0.7, "sf": 0.1, "final": 0.0, "champ": 0.0, "host": false}, {"code": "GHA", "name": "Ghana", "flag": "🇬🇭", "group": "L", "rank": 48, "rating": 1330, "pts": 3, "gd": 1, "qual": 55.0, "gw": 0.2, "ru": 5.5, "r32": 55.0, "r16": 3.0, "qf": 0.3, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "QAT", "name": "Qatar", "flag": "🇶🇦", "group": "B", "rank": 55, "rating": 1513, "pts": 1, "gd": -6, "qual": 53.9, "gw": 0.0, "ru": 0.0, "r32": 53.9, "r16": 10.9, "qf": 2.5, "sf": 0.4, "final": 0.0, "champ": 0.0, "host": false}, {"code": "TUR", "name": "Turkiye", "flag": "🇹🇷", "group": "D", "rank": 27, "rating": 1468, "pts": 0, "gd": -3, "qual": 53.9, "gw": 0.3, "ru": 4.9, "r32": 53.9, "r16": 5.9, "qf": 0.9, "sf": 0.1, "final": 0.0, "champ": 0.0, "host": false}, {"code": "KSA", "name": "Arab Saudi", "flag": "🇸🇦", "group": "H", "rank": 58, "rating": 1377, "pts": 1, "gd": 0, "qual": 51.5, "gw": 1.5, "ru": 11.2, "r32": 51.5, "r16": 3.5, "qf": 0.3, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "CPV", "name": "Cape Verde", "flag": "🇨🇻", "group": "H", "rank": 68, "rating": 1301, "pts": 1, "gd": 0, "qual": 32.3, "gw": 0.8, "ru": 10.2, "r32": 32.3, "r16": 0.9, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "BIH", "name": "Bosnia & Herzegovina", "flag": "🇧🇦", "group": "B", "rank": 74, "rating": 1407, "pts": 1, "gd": -3, "qual": 22.8, "gw": 0.0, "ru": 0.1, "r32": 22.8, "r16": 2.0, "qf": 0.2, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "ECU", "name": "Ecuador", "flag": "🇪🇨", "group": "E", "rank": 24, "rating": 1588, "pts": 1, "gd": -1, "qual": 22.6, "gw": 0.0, "ru": 2.8, "r32": 22.6, "r16": 7.6, "qf": 2.5, "sf": 0.6, "final": 0.1, "champ": 0.0, "host": false}, {"code": "UZB", "name": "Uzbekistan", "flag": "🇺🇿", "group": "K", "rank": 51, "rating": 1347, "pts": 0, "gd": -2, "qual": 19.9, "gw": 0.1, "ru": 1.3, "r32": 19.9, "r16": 0.6, "qf": 0.1, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "PAR", "name": "Paraguay", "flag": "🇵🇾", "group": "D", "rank": 41, "rating": 1335, "pts": 3, "gd": -2, "qual": 18.8, "gw": 0.0, "ru": 4.5, "r32": 18.8, "r16": 0.9, "qf": 0.0, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "RSA", "name": "Afrika Selatan", "flag": "🇿🇦", "group": "A", "rank": 59, "rating": 1359, "pts": 1, "gd": -2, "qual": 11.1, "gw": 0.0, "ru": 9.7, "r32": 11.1, "r16": 1.3, "qf": 0.1, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "CZE", "name": "Czechia", "flag": "🇨🇿", "group": "A", "rank": 39, "rating": 1474, "pts": 1, "gd": -1, "qual": 10.9, "gw": 0.0, "ru": 2.0, "r32": 10.9, "r16": 2.2, "qf": 0.4, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}, {"code": "TUN", "name": "Tunisia", "flag": "🇹🇳", "group": "F", "rank": 49, "rating": 1481, "pts": 0, "gd": -8, "qual": 9.2, "gw": 1.1, "ru": 0.3, "r32": 9.2, "r16": 1.4, "qf": 0.3, "sf": 0.0, "final": 0.0, "champ": 0.0, "host": false}], "champTop10": [{"code": "FRA", "name": "Perancis", "flag": "🇫🇷", "group": "I", "rank": 3, "rating": 1875, "pts": 3, "gd": 2, "qual": 100.0, "gw": 99.0, "ru": 0.9, "r32": 100.0, "r16": 94.5, "qf": 75.4, "sf": 58.7, "final": 41.2, "champ": 28.3, "host": false}, {"code": "ESP", "name": "Sepanyol", "flag": "🇪🇸", "group": "H", "rank": 2, "rating": 1833, "pts": 1, "gd": 0, "qual": 99.1, "gw": 77.8, "ru": 18.7, "r32": 99.1, "r16": 77.5, "qf": 56.6, "sf": 42.0, "final": 24.0, "champ": 15.1, "host": false}, {"code": "ARG", "name": "Argentina", "flag": "🇦🇷", "group": "J", "rank": 1, "rating": 1806, "pts": 3, "gd": 3, "qual": 100.0, "gw": 90.1, "ru": 9.7, "r32": 100.0, "r16": 73.7, "qf": 59.0, "sf": 40.9, "final": 24.3, "champ": 12.2, "host": false}, {"code": "ENG", "name": "England", "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "group": "L", "rank": 4, "rating": 1785, "pts": 3, "gd": 2, "qual": 100.0, "gw": 98.5, "ru": 1.4, "r32": 100.0, "r16": 89.3, "qf": 59.5, "sf": 38.7, "final": 21.9, "champ": 10.2, "host": false}, {"code": "POR", "name": "Portugal", "flag": "🇵🇹", "group": "K", "rank": 6, "rating": 1768, "pts": 1, "gd": 0, "qual": 98.2, "gw": 51.5, "ru": 41.0, "r32": 98.2, "r16": 76.5, "qf": 51.9, "sf": 29.6, "final": 15.3, "champ": 7.0, "host": false}, {"code": "BRA", "name": "Brazil", "flag": "🇧🇷", "group": "C", "rank": 5, "rating": 1753, "pts": 4, "gd": 3, "qual": 99.9, "gw": 55.4, "ru": 39.4, "r32": 99.9, "r16": 63.8, "qf": 46.1, "sf": 21.2, "final": 11.0, "champ": 4.9, "host": false}, {"code": "NED", "name": "Belanda", "flag": "🇳🇱", "group": "F", "rank": 7, "rating": 1740, "pts": 4, "gd": 4, "qual": 100.0, "gw": 81.3, "ru": 18.3, "r32": 100.0, "r16": 53.8, "qf": 39.0, "sf": 14.8, "final": 7.1, "champ": 3.1, "host": false}, {"code": "MAR", "name": "Maghribi", "flag": "🇲🇦", "group": "C", "rank": 12, "rating": 1728, "pts": 4, "gd": 1, "qual": 99.8, "gw": 42.7, "ru": 50.9, "r32": 99.8, "r16": 58.5, "qf": 40.1, "sf": 15.9, "final": 7.5, "champ": 3.0, "host": false}, {"code": "BEL", "name": "Belgium", "flag": "🇧🇪", "group": "G", "rank": 8, "rating": 1716, "pts": 1, "gd": 0, "qual": 99.6, "gw": 65.1, "ru": 26.1, "r32": 99.6, "r16": 78.7, "qf": 41.9, "sf": 18.8, "final": 7.3, "champ": 3.0, "host": false}, {"code": "MEX", "name": "Mexico", "flag": "🇲🇽", "group": "A", "rank": 15, "rating": 1659, "pts": 6, "gd": 3, "qual": 100.0, "gw": 95.6, "ru": 4.4, "r32": 100.0, "r16": 82.4, "qf": 33.1, "sf": 16.9, "final": 7.7, "champ": 2.8, "host": true}], "meta": {"nTeams": 48, "nMatches": 104, "nCities": 16, "nHosts": 3, "dataDate": "21 Jun 2026", "openDate": "11 Jun 2026", "finalDate": "19 Jul 2026"}};
+
+let selectedRamalanGroup = "all";
+let selectedSejarahYear = 2018;
+
 const groupLetters = Object.keys(groups);
-let selectedHomeGroup = "A";
 let selectedTeamGroup = "all";
 let selectedMatchStatus = "all";
 let selectedMatchGroup = "all";
-let selectedNewsCategory = "all";
 let selectedStandingGroup = "A";
 let selectedStadiumCountry = "all";
-const favorites = new Set(JSON.parse(localStorage.getItem("sepak26-favorites") || "[]"));
 
 function team(code, label = "") {
   return teamByCode[code] || { name: label || (code === "TBD" ? "Akan ditentukan" : code), code, flag: "🏳", rank: "-", group: "-" };
@@ -1862,32 +1719,40 @@ function buildConsensus(worldCupData, tourData, vhSource) {
   });
 }
 
-function renderSourceLedger() {
-  const ledger = document.querySelector("#source-ledger");
-  if (!ledger) return;
-  ledger.innerHTML = DATA_SOURCES.map((source) => `
-    <a class="source-item" href="${source.id === "vh26" ? "https://github.com/tuitamogamer-gpt/vh26-worldcup-2026" : source.url}" target="_blank" rel="noreferrer">
-      <strong>${source.name}</strong>
-      <span>${source.role}</span>
-      <b class="${sourceHealth[source.id] ? "" : "offline"}">${sourceHealth[source.id] ? "Tersambung" : "Tidak tersedia"}</b>
-    </a>
-  `).join("");
+function getMatchTV(match) {
+  if (/^[A-L]$/.test(match.group || "")) {
+    return [
+      { name: "Sukan+", url: "https://rtmklik.rtm.gov.my/" },
+      { name: "TV Okey", url: null },
+    ];
+  }
+  return [
+    { name: "RTM1", url: null },
+    { name: "TV Okey", url: null },
+    { name: "Sukan+", url: "https://rtmklik.rtm.gov.my/" },
+  ];
+}
+
+const DATA_SOURCE_TIMEOUT_MS = 6000;
+
+function fetchWithTimeout(url, options = {}, timeoutMs = DATA_SOURCE_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
 async function loadVerifiedData() {
   if (verificationLoading) return;
   verificationLoading = true;
-  const panel = document.querySelector(".verification-panel");
-  const title = document.querySelector("#verification-title");
-  const summary = document.querySelector("#verification-summary");
+  const note = document.querySelector("#updated-note");
   const refreshButton = document.querySelector("#refresh-data");
   if (refreshButton) refreshButton.disabled = true;
-  panel?.classList.remove("ready", "error");
-  if (title) title.textContent = "Menyemak sumber data...";
-  if (summary) summary.textContent = "Menghubungkan tiga sumber bebas.";
+  if (note) note.textContent = "Menyemak sumber data...";
 
+  // Each source gets its own timeout so one slow/dead API never stalls the others
+  // or the overall refresh — Promise.allSettled still resolves quickly.
   const responses = await Promise.allSettled(DATA_SOURCES.map(async (source) => {
-    const response = await fetch(source.url, { cache: "no-store" });
+    const response = await fetchWithTimeout(source.url, { cache: "no-store" });
     if (!response.ok) throw new Error(`${source.name}: HTTP ${response.status}`);
     return source.id === "vh26" ? response.text() : response.json();
   }));
@@ -1898,8 +1763,6 @@ async function loadVerifiedData() {
     sourceHealth[source.id] = result.status === "fulfilled";
     if (result.status === "fulfilled") payload[source.id] = result.value;
   });
-  renderSourceLedger();
-
   if (payload.worldcup26) {
     const consensus = buildConsensus(payload.worldcup26, payload.tour, payload.vh26);
     if (consensus.length) {
@@ -1909,16 +1772,10 @@ async function loadVerifiedData() {
         savedAt: lastVerifiedAt.toISOString(),
         matches,
       }));
-      renderTicker();
-      renderHomeMatches();
       renderSchedule();
-      renderLiveCenter();
       renderStandings();
-      panel?.classList.add("ready");
       const verifiedCount = matches.filter((match) => match.verification?.schedule === "verified").length;
-      const reportedResults = matches.filter((match) => match.verification?.result === "reported").length;
-      if (title) title.textContent = `${verifiedCount} jadual disahkan silang`;
-      if (summary) summary.textContent = `${reportedResults} keputusan dilaporkan oleh satu sumber · Semakan ${lastVerifiedAt.toLocaleTimeString("ms-MY", { hour: "2-digit", minute: "2-digit" })}`;
+      if (note) note.textContent = `Dikemaskini · ${verifiedCount} jadual disahkan silang · ${lastVerifiedAt.toLocaleTimeString("ms-MY", { hour: "2-digit", minute: "2-digit" })}`;
       verificationLoading = false;
       if (refreshButton) refreshButton.disabled = false;
       return;
@@ -1928,17 +1785,11 @@ async function loadVerifiedData() {
   const cached = JSON.parse(localStorage.getItem("sepak26-consensus") || "null");
   if (cached?.matches?.length) {
     matches = cached.matches;
-    renderTicker();
-    renderHomeMatches();
     renderSchedule();
-    renderLiveCenter();
     renderStandings();
-    if (title) title.textContent = "Menggunakan konsensus tersimpan";
-    if (summary) summary.textContent = `Sumber utama tidak tersedia · Cache ${new Date(cached.savedAt).toLocaleString("ms-MY")}`;
-  } else {
-    panel?.classList.add("error");
-    if (title) title.textContent = "Pengesahan langsung tidak tersedia";
-    if (summary) summary.textContent = "Data fallback tempatan sedang digunakan.";
+    if (note) note.textContent = `Menggunakan data tersimpan · Cache ${new Date(cached.savedAt).toLocaleString("ms-MY")}`;
+  } else if (note) {
+    note.textContent = "Pengesahan langsung tidak tersedia · menggunakan data fallback tempatan.";
   }
   verificationLoading = false;
   if (refreshButton) refreshButton.disabled = false;
@@ -2021,37 +1872,6 @@ function teamCleanSheetLeaders() {
     .sort((a, b) => b.cleanSheets - a.cleanSheets || b.points - a.points);
 }
 
-function renderLiveCenter() {
-  const target = document.querySelector("#live-center");
-  if (!target) return;
-  const liveMatches = matches.filter((match) => match.status === "live");
-  if (!liveMatches.length) {
-    target.classList.remove("active");
-    target.innerHTML = "";
-    return;
-  }
-  target.classList.add("active");
-  target.innerHTML = `
-    <div class="live-center-head">
-      <div><span class="live-pulse"></span><strong>LIVE NOW</strong><small>${liveMatches.length} perlawanan sedang berlangsung</small></div>
-      <span>Dikemas kini ${lastVerifiedAt ? lastVerifiedAt.toLocaleTimeString("ms-MY", { hour: "2-digit", minute: "2-digit" }) : "sekarang"}</span>
-    </div>
-    <div class="live-game-grid">
-      ${liveMatches.map((match) => {
-        const home = team(match.home, match.homeLabel);
-        const away = team(match.away, match.awayLabel);
-        return `
-          <button class="live-game" data-match-id="${match.id}">
-            <span class="live-minute">${match.minute || "LIVE"}</span>
-            <span>${home.flag} ${home.name}</span>
-            <strong>${match.score[0]} : ${match.score[1]}</strong>
-            <span>${away.flag} ${away.name}</span>
-            <small>Kumpulan ${match.group} · ${match.venue}</small>
-          </button>`;
-      }).join("")}
-    </div>`;
-}
-
 function standingsTable(group, compact = false) {
   const table = calculateGroupTable(group);
   return `
@@ -2108,129 +1928,63 @@ function renderStandings() {
       ${cleanSheetRows.length ? cleanSheetRows.map((item, index) => `<div class="leader-row"><b>${index + 1}</b><span>${team(item.code).flag}</span><div><strong>${team(item.code).name}</strong><small>Kumpulan ${team(item.code).group} · Posisi ${item.position}</small></div><em>${item.cleanSheets}</em></div>`).join("") : `<p class="leader-empty">Belum ada clean sheet.</p>`}
     </article>`;
 
-  document.querySelector("#all-standings").innerHTML = `
-    <div class="section-heading"><div><span class="kicker">GAMBARAN KESELURUHAN</span><h2>Semua <i>kumpulan</i></h2></div></div>
-    <div class="all-group-grid">${groupLetters.map((group) => standingsTable(group, true)).join("")}</div>`;
+  document.querySelector("#all-group-grid").innerHTML = groupLetters.map((group) => standingsTable(group, true)).join("");
 }
 
-function renderStadiumMap(list = stadiums) {
-  const target = document.querySelector("#stadium-map");
-  if (!target) return;
-  const selectedIds = new Set(list.map((stadium) => stadium.id));
-  target.innerHTML = `
-    <svg viewBox="0 0 100 100" aria-hidden="true">
-      <path class="map-land" d="M11 18 26 10 43 13 55 22 74 24 88 34 84 49 73 54 76 70 65 75 53 68 45 74 37 87 28 80 30 67 19 58 15 43Z"></path>
-      <path class="map-border" d="M18 35 33 39 48 37 62 42 77 40M29 67 43 70 54 65"></path>
-      ${stadiums.map((stadium) => `
-        <g class="map-pin ${selectedIds.has(stadium.id) ? "" : "muted"}" data-stadium-id="${stadium.id}" tabindex="0" role="button" aria-label="${stadium.name}, ${stadium.city}">
-          <circle cx="${stadium.mapX}" cy="${stadium.mapY}" r="2.2"></circle>
-          <text x="${stadium.mapX}" y="${stadium.mapY - 3.8}">${stadium.id}</text>
-        </g>`).join("")}
-    </svg>`;
-}
-
-function stadiumCard(stadium) {
+function stadiumRow(stadium) {
   const age = 2026 - stadium.opened;
+  const mapUrl = `https://www.openstreetmap.org/?mlat=${stadium.lat}&mlon=${stadium.lon}#map=15/${stadium.lat}/${stadium.lon}`;
   return `
-    <article class="stadium-card" data-stadium-id="${stadium.id}" tabindex="0">
-      <div class="stadium-card-photo">
-        <img src="${stadium.image}" alt="Pandangan ${stadium.name}" loading="lazy">
-        <a href="${stadium.imageSource}" target="_blank" rel="noreferrer" data-photo-credit onclick="event.stopPropagation()">Foto · ${stadium.imageCredit} ↗</a>
+    <article class="stadium-row" data-stadium-id="${stadium.id}" tabindex="0">
+      <span class="stadium-index">${String(stadium.id).padStart(2, "0")}</span>
+      <span class="stadium-name-wrap"><strong>${stadium.name}</strong><span class="stadium-sub">${stadium.city}, ${stadium.country}</span></span>
+      <span class="stadium-quick">${stadium.capacity.toLocaleString("en-US")} tempat duduk · ${stadium.matches} perlawanan</span>
+      <span class="expand-chevron" aria-hidden="true">›</span>
+    </article>
+    <div class="stadium-expand" id="stadium-expand-${stadium.id}">
+      <div class="expand-inner">
+        <div class="expand-section">
+          <div class="expand-label">Maklumat venue</div>
+          <div class="team-detail-meta">
+            <span>Nama FIFA <strong>${stadium.fifaName}</strong></span>
+            <span>Dibuka <strong>${stadium.opened}</strong></span>
+            <span>Usia 2026 <strong>${age} tahun</strong></span>
+            <span>Bumbung <strong>${stadium.roof}</strong></span>
+            <span>Permukaan <strong>${stadium.surface}</strong></span>
+            <span>Koordinat <strong>${stadium.lat.toFixed(3)}, ${stadium.lon.toFixed(3)}</strong></span>
+          </div>
+        </div>
+        <div class="expand-section">
+          <div class="expand-label">Sejarah ringkas</div>
+          <p class="expand-venue-note">${stadium.history}</p>
+          <p class="expand-venue-note"><em>${stadium.fact}</em></p>
+          <a class="tv-badge" href="${mapUrl}" target="_blank" rel="noreferrer">Lihat lokasi ↗</a>
+        </div>
       </div>
-      <div class="stadium-card-index">${String(stadium.id).padStart(2, "0")}</div>
-      <div class="stadium-card-top"><span>${stadium.country}</span><span>${stadium.matches} perlawanan</span></div>
-      <h3>${stadium.name}</h3>
-      <p>${stadium.city}</p>
-      <div class="stadium-metrics">
-        <div><strong>${stadium.capacity.toLocaleString("en-US")}</strong><span>Kapasiti</span></div>
-        <div><strong>${age}</strong><span>Usia pada 2026</span></div>
-        <div><strong>${stadium.opened}</strong><span>Dibuka</span></div>
-      </div>
-      <button>Lihat cerita &amp; peta →</button>
-    </article>`;
+    </div>`;
 }
 
 function renderStadiums() {
   const list = stadiums.filter((stadium) => selectedStadiumCountry === "all" || stadium.country === selectedStadiumCountry);
-  document.querySelector("#stadium-grid").innerHTML = list.map(stadiumCard).join("");
-  document.querySelector("#stadium-count").textContent = `${list.length} stadium`;
-  renderStadiumMap(list);
+  document.querySelector("#stadium-grid").innerHTML = list.map(stadiumRow).join("");
 }
 
-function openStadiumDialog(id) {
-  const stadium = stadiums.find((item) => item.id === Number(id));
-  if (!stadium) return;
-  const age = 2026 - stadium.opened;
-  const mapUrl = `https://www.openstreetmap.org/?mlat=${stadium.lat}&mlon=${stadium.lon}#map=15/${stadium.lat}/${stadium.lon}`;
-  document.querySelector("#stadium-dialog-content").innerHTML = `
-    <div class="stadium-dialog-hero" style="--stadium-image: linear-gradient(90deg, rgba(13,15,18,.88), rgba(13,15,18,.2)), url('${stadium.image}')">
-      <span class="kicker">${stadium.country} · VENUE ${String(stadium.id).padStart(2, "0")}</span>
-      <h2>${stadium.name}</h2>
-      <p>${stadium.fifaName} · ${stadium.city}</p>
-      <a href="${stadium.imageSource}" target="_blank" rel="noreferrer">Foto · ${stadium.imageCredit} · atribusi &amp; lesen ↗</a>
-    </div>
-    <div class="stadium-dialog-body">
-      <div class="stadium-detail-metrics">
-        <div><strong>${stadium.capacity.toLocaleString("en-US")}</strong><span>Kapasiti kejohanan</span></div>
-        <div><strong>${stadium.opened}</strong><span>Tahun dibuka</span></div>
-        <div><strong>${age} tahun</strong><span>Usia pada 2026</span></div>
-        <div><strong>${stadium.matches}</strong><span>Perlawanan</span></div>
-      </div>
-      <div class="stadium-story"><h3>Sejarah ringkas</h3><p>${stadium.history}</p><blockquote>${stadium.fact}</blockquote></div>
-      <div class="stadium-facilities">
-        <div><span>Bumbung</span><strong>${stadium.roof}</strong></div>
-        <div><span>Permukaan</span><strong>${stadium.surface}</strong></div>
-        <div><span>Koordinat</span><strong>${stadium.lat.toFixed(3)}, ${stadium.lon.toFixed(3)}</strong></div>
-      </div>
-      <a class="map-link" href="${mapUrl}" target="_blank" rel="noreferrer">Buka lokasi di OpenStreetMap ↗</a>
-    </div>`;
-  document.querySelector("#stadium-dialog").showModal();
+function toggleStadiumExpand(id) {
+  const row = document.querySelector(`.stadium-row[data-stadium-id="${id}"]`);
+  const expand = document.querySelector(`#stadium-expand-${id}`);
+  if (!row || !expand) return;
+  const isOpen = row.classList.contains("is-open");
+  document.querySelectorAll(".stadium-row.is-open").forEach((r) => r.classList.remove("is-open"));
+  document.querySelectorAll(".stadium-expand.is-open").forEach((e) => e.classList.remove("is-open"));
+  if (!isOpen) {
+    row.classList.add("is-open");
+    expand.classList.add("is-open");
+    expand.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
-function renderTicker() {
-  const target = document.querySelector("#ticker-track");
-  const highlighted = [...matches].sort((a, b) => (a.status === "live" ? -1 : 0) - (b.status === "live" ? -1 : 0)).slice(0, 3);
-  target.innerHTML = highlighted.map((match) => {
-    const home = team(match.home, match.homeLabel);
-    const away = team(match.away, match.awayLabel);
-    const status = ["finished", "live"].includes(match.status) ? `${match.score[0]} — ${match.score[1]}` : match.time;
-    return `
-      <div class="ticker-game">
-        <span class="flag">${home.flag}</span>
-        <div><strong>${home.code} ${status} ${away.code}</strong><small>Kumpulan ${match.group} · ${match.date}</small></div>
-        <span class="flag">${away.flag}</span>
-      </div>`;
-  }).join("");
-}
-
-function matchCard(match) {
-  const home = team(match.home, match.homeLabel);
-  const away = team(match.away, match.awayLabel);
-  const score = ["finished", "live"].includes(match.status) ? match.score : ["–", "–"];
-  const verification = match.verification?.schedule || "unverified";
-  return `
-    <article class="match-card" data-match-id="${match.id}" tabindex="0">
-      <div class="match-card-head"><span>Kumpulan ${match.group}</span><span>${match.status === "finished" ? "Tamat" : match.status === "live" ? "Langsung" : `${match.time} ${match.timeZoneLabel || "MYT"}`}</span></div>
-      <div class="match-card-teams">
-        <div class="match-card-team"><span class="flag">${home.flag}</span><strong>${home.name}</strong><b>${score[0]}</b></div>
-        <div class="match-card-team"><span class="flag">${away.flag}</span><strong>${away.name}</strong><b>${score[1]}</b></div>
-      </div>
-      <div class="match-card-foot"><span>${match.venue.split(",")[0]}</span><span class="data-badge ${verification}">${verification === "verified" ? "Disahkan" : verification === "reported" ? "Dilaporkan" : "Belum disahkan"}</span></div>
-    </article>`;
-}
-
-function renderHomeMatches() {
-  const featured = matches.find((match) => match.status === "live") || matches.find((match) => match.status === "upcoming");
-  if (!featured) return;
-  const home = team(featured.home, featured.homeLabel);
-  const away = team(featured.away, featured.awayLabel);
-  document.querySelector("#featured-match").innerHTML = `
-    <div class="featured-team"><span class="flag">${home.flag}</span><div><strong>${home.name}</strong><small>${home.code} · Kumpulan ${featured.group}</small></div></div>
-    <div class="featured-center ${featured.status === "live" ? "is-live" : ""}"><span class="versus">${featured.status === "live" ? featured.minute || "LIVE" : "vs"}</span><strong>${featured.status === "live" ? `${featured.score[0]} : ${featured.score[1]}` : featured.time}</strong><small>${featured.date}<br>${featured.venue.split(",")[0]}</small></div>
-    <div class="featured-team away"><span class="flag">${away.flag}</span><div><strong>${away.name}</strong><small>${away.code} · Kumpulan ${featured.group}</small></div></div>`;
-
-  const preview = [...matches].sort((a, b) => (a.status === "live" ? -1 : 0) - (b.status === "live" ? -1 : 0)).slice(0, 3);
-  document.querySelector("#match-preview-grid").innerHTML = preview.map(matchCard).join("");
+function matchSortKey(m) {
+  return `${m.date}T${m.time || "00:00"}`;
 }
 
 function renderGroupTabs(targetId, includeAll = false) {
@@ -2240,26 +1994,22 @@ function renderGroupTabs(targetId, includeAll = false) {
     ...groupLetters.map((letter) => ({ value: letter, label: `Kumpulan ${letter}` })),
   ];
   target.innerHTML = buttons.map(({ value, label }) =>
-    `<button data-group="${value}" class="${(includeAll ? selectedTeamGroup : selectedHomeGroup) === value ? "active" : ""}">${label}</button>`,
+    `<button data-group="${value}" class="${selectedTeamGroup === value ? "active" : ""}">${label}</button>`,
   ).join("");
 }
 
-function teamTile(data) {
+function teamRow(data) {
   const [name, code, flag, rank] = data;
   const group = teamByCode[code].group;
   return `
-    <article class="team-tile" data-team-code="${code}" role="button" tabindex="0" aria-label="Lihat skuad ${name}">
-      <button class="favorite ${favorites.has(code) ? "active" : ""}" data-favorite="${code}" aria-label="Tandakan ${name} sebagai kegemaran">★</button>
-      <span class="team-rank">${String(rank).padStart(2, "0")}</span>
+    <article class="team-row" data-team-code="${code}" tabindex="0">
       <span class="flag">${flag}</span>
-      <h3>${name}</h3>
-      <p>${code} · Kumpulan ${group} · Ranking ${rank}</p>
-    </article>`;
-}
-
-function renderHomeTeams() {
-  renderGroupTabs("#home-group-tabs");
-  document.querySelector("#home-team-strip").innerHTML = groups[selectedHomeGroup].map(teamTile).join("");
+      <span class="team-name-wrap"><strong>${name}</strong><span class="stadium-sub">${code} · Kumpulan ${group} · Ranking ${rank}</span></span>
+      <span class="expand-chevron" aria-hidden="true">›</span>
+    </article>
+    <div class="team-row-expand" id="team-expand-${code}">
+      <div class="expand-inner">${teamDetailHtml(code)}</div>
+    </div>`;
 }
 
 function renderAllTeams() {
@@ -2270,57 +2020,7 @@ function renderAllTeams() {
     .flatMap(([, teams]) => teams)
     .filter(([name, code]) => name.toLowerCase().includes(query) || code.toLowerCase().includes(query));
   document.querySelector("#all-teams-grid").innerHTML =
-    list.length ? list.map(teamTile).join("") : `<div class="empty-state">Tiada pasukan ditemui.</div>`;
-}
-
-function newsCard(article) {
-  const sources = Array.isArray(article.sources) ? article.sources : [];
-  return `
-    <article class="news-card">
-      <div class="news-meta"><span class="news-category">${article.category}</span><span>${article.date}</span></div>
-      <h3>${article.title}</h3>
-      <p>${article.excerpt}</p>
-      ${article.analysis ? `<p class="news-analysis-text">${article.analysis}</p>` : ""}
-      ${sources.length ? `
-        <div class="news-sources">
-          <span>${sources.length} sumber · Keyakinan ${article.confidence || "belum dinilai"}</span>
-          ${sources.map((source) => `<a href="${source.url}" target="_blank" rel="noreferrer">${source.name} ↗</a>`).join("")}
-        </div>` : ""}
-    </article>`;
-}
-
-function renderNewsStatus() {
-  const title = document.querySelector("#news-update-title");
-  const summary = document.querySelector("#news-update-summary");
-  if (!title || !summary) return;
-  const updated = newsPayload.metadata?.updatedAt
-    ? new Intl.DateTimeFormat("ms-MY", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kuala_Lumpur" }).format(new Date(newsPayload.metadata.updatedAt))
-    : "tidak tersedia";
-  const sourceCount = newsPayload.metadata?.sourceCount || new Set(news.flatMap((article) => article.sources?.map((source) => source.name) || [])).size;
-  title.textContent = newsPayload.metadata?.status === "verified" ? "Analisis terkini telah diterbitkan" : "Menggunakan berita sandaran";
-  summary.textContent = `Kemas kini ${updated} · ${sourceCount} sumber berita dirujuk · ${newsPayload.metadata?.methodology || ""}`;
-}
-
-function renderNews() {
-  document.querySelector("#home-news-grid").innerHTML = news.slice(0, 3).map(newsCard).join("");
-  const filtered = news.filter((article) => selectedNewsCategory === "all" || article.category === selectedNewsCategory);
-  document.querySelector("#all-news-grid").innerHTML = filtered.map(newsCard).join("");
-  renderNewsStatus();
-}
-
-function refreshNewsData() {
-  const previous = document.querySelector("#news-data-refresh");
-  if (previous) previous.remove();
-  const script = document.createElement("script");
-  script.id = "news-data-refresh";
-  script.src = `data/news-data.js?ts=${Date.now()}`;
-  script.onload = () => {
-    if (!window.SEPAK26_NEWS?.articles?.length) return;
-    newsPayload = window.SEPAK26_NEWS;
-    news = newsPayload.articles;
-    renderNews();
-  };
-  document.head.appendChild(script);
+    list.length ? list.map(teamRow).join("") : `<div class="empty-state">Tiada pasukan ditemui.</div>`;
 }
 
 function renderMatchFilters() {
@@ -2329,10 +2029,12 @@ function renderMatchFilters() {
 }
 
 function renderSchedule() {
-  const filtered = matches.filter((match) =>
-    (selectedMatchStatus === "all" || match.status === selectedMatchStatus) &&
-    (selectedMatchGroup === "all" || match.group === selectedMatchGroup),
-  );
+  const filtered = [...matches]
+    .sort((a, b) => matchSortKey(a).localeCompare(matchSortKey(b)))
+    .filter((match) =>
+      (selectedMatchStatus === "all" || match.status === selectedMatchStatus) &&
+      (selectedMatchGroup === "all" || match.group === selectedMatchGroup),
+    );
   const byDate = Object.groupBy
     ? Object.groupBy(filtered, (match) => match.date)
     : filtered.reduce((result, match) => {
@@ -2347,67 +2049,397 @@ function renderSchedule() {
       const hasScore = ["finished", "live"].includes(match.status);
       const score = hasScore ? `${match.score[0]} : ${match.score[1]}` : match.time;
       const verification = hasScore ? match.verification?.result || "unverified" : match.verification?.schedule || "unverified";
+      const tvChannels = getMatchTV(match);
+      const tvQuick = tvChannels.map(c => c.name).join(" · ");
+      const tvBadgesHtml = tvChannels.map(c =>
+        c.url
+          ? `<a class="tv-badge" href="${c.url}" target="_blank" rel="noreferrer">${c.name} ↗</a>`
+          : `<span class="tv-badge">${c.name}</span>`
+      ).join("");
+
       return `
-        <article class="schedule-row ${match.status === "live" ? "is-live" : ""}" data-match-id="${match.id}" tabindex="0">
-          <div class="schedule-meta"><span>Kumpulan ${match.group}</span><span>${match.status === "finished" ? "Tamat" : match.status === "live" ? "Langsung" : `${match.time} ${match.timeZoneLabel || "MYT"}`}</span><span class="data-badge ${verification}">${verification === "verified" ? "Disahkan" : verification === "reported" ? "Dilaporkan" : "Belum disahkan"}</span></div>
+        <article class="schedule-row ${match.status === "live" ? "is-live" : ""}" data-match-id="${match.id}">
+          <div class="schedule-meta"><span>Kumpulan ${match.group}</span><span>${match.status === "finished" ? "Tamat" : match.status === "live" ? "🔴 Langsung" : `${match.time} ${match.timeZoneLabel || "MYT"}`}</span><span class="data-badge ${verification}">${verification === "verified" ? "Disahkan" : verification === "reported" ? "Dilaporkan" : "Belum disahkan"}</span></div>
           <div class="schedule-versus">
-            <div class="schedule-team"><strong>${home.name}</strong><span class="flag">${home.flag}</span></div>
+            <button type="button" class="schedule-team" data-match-team="${match.id}|home"><strong>${home.name}</strong><span class="flag">${home.flag}</span></button>
             <div class="schedule-score">${score}</div>
-            <div class="schedule-team away"><strong>${away.name}</strong><span class="flag">${away.flag}</span></div>
+            <button type="button" class="schedule-team away" data-match-team="${match.id}|away"><span class="flag">${away.flag}</span><strong>${away.name}</strong></button>
           </div>
-          <div class="schedule-venue">${match.venue}<br><strong>Lihat sumber →</strong></div>
-        </article>`;
+          <div class="schedule-footer" data-match-toggle="${match.id}">
+            <span class="schedule-venue-text">${match.venue}</span>
+            <span class="schedule-tv-quick">📺 ${tvQuick}</span>
+            <span class="expand-chevron" aria-hidden="true">›</span>
+          </div>
+        </article>
+        <div class="match-team-expand" id="match-team-expand-${match.id}-home">
+          <div class="expand-inner">${matchTeamDetailHtml(match, "home")}</div>
+        </div>
+        <div class="match-team-expand" id="match-team-expand-${match.id}-away">
+          <div class="expand-inner">${matchTeamDetailHtml(match, "away")}</div>
+        </div>
+        <div class="match-expand" id="match-expand-${match.id}">
+          <div class="expand-inner">
+            <div class="expand-section">
+              <div class="expand-label">📺 Siaran TV Malaysia</div>
+              <div class="tv-channels">${tvBadgesHtml}</div>
+              <p class="expand-venue-note">${match.venue}</p>
+            </div>
+          </div>
+        </div>`;
     }).join("")}
   `).join("") || `<div class="empty-state">Tiada perlawanan bagi pilihan ini.</div>`;
 }
 
-function openMatchDialog(id) {
-  const match = matches.find((item) => item.id === Number(id));
-  if (!match) return;
-  const home = team(match.home, match.homeLabel);
-  const away = team(match.away, match.awayLabel);
+function matchTeamDetailHtml(match, side) {
+  const code = match[side];
+  const t = team(code, side === "home" ? match.homeLabel : match.awayLabel);
   const hasScore = ["finished", "live"].includes(match.status);
-  const score = hasScore ? `${match.score[0]} — ${match.score[1]}` : match.time;
-  const stats = match.stats ? Object.entries(match.stats).map(([label, values]) => {
-    const total = values[0] + values[1] || 1;
-    return `
-      <div class="stat-row">
-        <strong>${values[0]}</strong>
-        <div><div>${label}</div><div class="stat-bars"><span><i style="width:${(values[0] / total) * 100}%"></i></span><span><i style="width:${(values[1] / total) * 100}%"></i></span></div></div>
-        <strong>${values[1]}</strong>
-      </div>`;
-  }).join("") : "";
-  const sourceNames = (match.verification?.sourceIds || []).map((id) => DATA_SOURCES.find((source) => source.id === id)).filter(Boolean);
-  document.querySelector("#match-dialog-content").innerHTML = `
-    <div class="dialog-head">
-      <div class="match-card-head"><span>Kumpulan ${match.group} · ${match.date}</span><span>${match.status === "finished" ? "Tamat" : match.status === "live" ? "Langsung" : "Akan datang"}</span></div>
-      <div class="dialog-teams">
-        <div class="dialog-team"><span class="flag">${home.flag}</span><strong>${home.name}</strong></div>
-        <div class="dialog-score">${score}</div>
-        <div class="dialog-team"><span class="flag">${away.flag}</span><strong>${away.name}</strong></div>
-      </div>
+  const goals = hasScore ? parseMatchEvents(match.scorers?.[side], side) : [];
+  const scorersHtml = hasScore
+    ? (goals.length
+      ? goals.map(e => `
+          <div class="event-row">
+            <span class="event-name">${e.isOG ? `${e.name} <em>(OG)</em>` : e.name}</span>
+            <span class="event-icon">⚽</span>
+            <span class="event-minute">${e.minute ? e.minute + "′" : "—"}</span>
+          </div>`).join("")
+      : `<p class="events-empty">Tiada maklumat pencetak gol.</p>`)
+    : `<p class="events-empty">Perlawanan belum bermula.</p>`;
+
+  const sq = squads[code];
+  const starters = sq?.players || [];
+  const subs = sq?.subs || [];
+
+  return `
+    <div class="expand-section">
+      <div class="expand-label">⚽ Pencetak Gol — ${t.name}</div>
+      <div class="match-events">${scorersHtml}</div>
     </div>
-    <div class="stats-panel">
-      <h3>Statistik perlawanan</h3>
-      ${stats || `<div class="stats-unavailable"><strong>Belum dapat disahkan.</strong><br>Ketiga-tiga sumber semasa tidak menyediakan metrik silang seperti penguasaan bola, percubaan dan sepakan sudut. Statistik demonstrasi tidak dipaparkan sebagai data sebenar.</div>`}
-      <div class="provenance-list">
-        ${sourceNames.map((source) => `<div><span>${source.name}</span><strong>${source.role}</strong></div>`).join("") || `<div><span>Fallback tempatan</span><strong>Belum disahkan</strong></div>`}
-      </div>
-      <p class="match-card-foot"><span>${match.venue}</span><span>${match.time} ${match.timeZoneLabel || "MYT"}</span></p>
+    ${starters.length ? `
+    <div class="expand-section">
+      <div class="expand-label">Pemain Disenaraikan<span class="player-count">${starters.length} pemain</span></div>
+      <div class="player-list">${playerRowsHtml(starters)}</div>
+    </div>` : `<div class="expand-section"><p class="events-empty">Senarai pemain belum tersedia untuk ${t.name}.</p></div>`}
+    ${subs.length ? `
+    <div class="expand-section">
+      <div class="expand-label">Pertukaran Pemain<span class="player-count">${subs.length} pemain ganti</span></div>
+      <div class="player-list">${playerRowsHtml(subs)}</div>
+      <p class="expand-disclaimer">Minit pertukaran sebenar tidak disediakan oleh sumber data semasa — senarai di atas ialah pemain ganti berdaftar pasukan.</p>
+    </div>` : ""}`;
+}
+
+function toggleMatchTeamExpand(matchId, side) {
+  const expand = document.querySelector(`#match-team-expand-${matchId}-${side}`);
+  const btn = document.querySelector(`[data-match-team="${matchId}|${side}"]`);
+  if (!expand || !btn) return;
+  const isOpen = expand.classList.contains("is-open");
+  document.querySelectorAll(".match-team-expand.is-open").forEach((e) => e.classList.remove("is-open"));
+  document.querySelectorAll("[data-match-team].is-open").forEach((b) => b.classList.remove("is-open"));
+  if (!isOpen) {
+    btn.classList.add("is-open");
+    expand.classList.add("is-open");
+    expand.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+function parseMatchEvents(scorerStr, side) {
+  if (!scorerStr || scorerStr === "null") return [];
+  // Handle PHP/API format: {"Player 9'","Player 67'"} or plain "Player 9', Player 67'"
+  let raw = String(scorerStr).trim();
+  // Strip outer { } braces if present
+  if (raw.startsWith("{") && raw.endsWith("}")) {
+    raw = raw.slice(1, -1);
+  }
+  // Split by '","' first (quoted entries), fallback to plain comma
+  const parts = raw.includes('","') ? raw.split('","') : raw.split(",");
+  return parts
+    .map((s) => s.replace(/^["'\s]+|["'\s]+$/g, "").trim())
+    .filter((s) => s && s !== "null")
+    .map((entry) => {
+      const minuteMatch = entry.match(/(\d+)(?:\+\d+)?['′]/);
+      const minute = minuteMatch ? minuteMatch[1] : null;
+      const name = entry.replace(/\d+(?:\+\d+)?['′]/g, "").replace(/\(OG\)/i, "").trim();
+      const isOG = /\(OG\)/i.test(entry);
+      return { name, minute, side, isOG };
+    })
+    .filter((e) => e.name && e.name !== "null");
+}
+
+function toggleMatchExpand(id) {
+  const expand = document.querySelector(`#match-expand-${id}`);
+  const row = document.querySelector(`.schedule-row[data-match-id="${id}"]`);
+  if (!expand || !row) return;
+  const isOpen = row.classList.contains("is-open");
+  // Close all open rows first
+  document.querySelectorAll(".schedule-row.is-open").forEach(r => r.classList.remove("is-open"));
+  document.querySelectorAll(".match-expand.is-open").forEach(e => e.classList.remove("is-open"));
+  // Open if it was closed
+  if (!isOpen) {
+    row.classList.add("is-open");
+    expand.classList.add("is-open");
+    expand.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+// ================================================================
+// RAMALAN & SEJARAH — render, sheet popup, confetti
+// ================================================================
+function ringSvg(pct, size = 64, stroke = 6) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c - (Math.min(pct, 100) / 100) * c;
+  return `
+    <svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle class="ring-track" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}" fill="none" />
+      <circle class="ring-fill" cx="${size / 2}" cy="${size / 2}" r="${r}" stroke-width="${stroke}" fill="none"
+        stroke-dasharray="${c}" stroke-dashoffset="${c}" data-final-offset="${offset}"
+        transform="rotate(-90 ${size / 2} ${size / 2})" />
+    </svg>`;
+}
+
+function animateRings(container) {
+  container.querySelectorAll(".ring-fill").forEach((ring) => {
+    const target = ring.dataset.finalOffset;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      ring.style.strokeDashoffset = target;
+    }));
+  });
+}
+
+function renderRamalanPodium() {
+  const [first, second, third] = ramalanData.champTop10;
+  const slot = (t, place) => `
+    <div class="podium-slot podium-${place}" data-ram-code="${t.code}">
+      <span class="podium-place">${place === 1 ? "🥇" : place === 2 ? "🥈" : "🥉"}</span>
+      <span class="podium-flag">${t.flag}</span>
+      <strong class="podium-name">${t.name}${t.host ? " <small>(Hos)</small>" : ""}</strong>
+      <span class="podium-pct">${t.champ.toFixed(1)}%</span>
+      <div class="podium-bar"></div>
     </div>`;
-  document.querySelector("#match-dialog").showModal();
+  document.querySelector("#ram-podium").innerHTML = `
+    ${slot(second, 2)}${slot(first, 1)}${slot(third, 3)}
+    <button class="confetti-trigger" id="ram-confetti-btn" data-confetti="1">🎉 Raikan ramalan juara</button>`;
+}
+
+function ramRingCard(t) {
+  return `
+    <article class="ring-card" data-ram-code="${t.code}" tabindex="0">
+      <div class="ring-wrap">
+        ${ringSvg(t.champ * (100 / Math.max(ramalanData.champTop10[0].champ, 1)), 64, 6)}
+        <span class="ring-flag">${t.flag}</span>
+      </div>
+      <strong>${t.name}</strong>
+      <span class="ring-pct">${t.champ.toFixed(1)}%</span>
+    </article>`;
+}
+
+function renderRamalanRings() {
+  const target = document.querySelector("#ram-ringrow");
+  target.innerHTML = ramalanData.champTop10.map(ramRingCard).join("");
+  animateRings(target);
+}
+
+function swingRow(t) {
+  return `
+    <article class="swing-row" data-ram-code="${t.code}" tabindex="0">
+      <span class="flag">${t.flag}</span>
+      <span class="swing-name"><strong>${t.name}</strong><span class="stadium-sub">Kumpulan ${t.group} · Ranking ${t.rank}</span></span>
+      <div class="swing-bar-wrap">
+        <div class="swing-bar" style="width:${t.qual}%"></div>
+      </div>
+      <span class="swing-pct">${t.qual.toFixed(1)}%</span>
+    </article>`;
+}
+
+function renderRamalanSwing() {
+  document.querySelector("#ram-swing").innerHTML = ramalanData.swing.length
+    ? ramalanData.swing.map(swingRow).join("")
+    : `<div class="empty-state">Tiada pasukan dalam julat sengit sekarang.</div>`;
+}
+
+function renderRamGroupTabs() {
+  const groupLettersRam = [...new Set(ramalanData.teams.map((t) => t.group))].sort();
+  const buttons = [{ value: "all", label: "Semua" }, ...groupLettersRam.map((letter) => ({ value: letter, label: `Kumpulan ${letter}` }))];
+  document.querySelector("#ram-group-tabs").innerHTML = buttons.map(({ value, label }) =>
+    `<button data-ram-group="${value}" class="${selectedRamalanGroup === value ? "active" : ""}">${label}</button>`,
+  ).join("");
+}
+
+function ramTeamRow(t) {
+  return `
+    <article class="team-row ram-team-row" data-ram-code="${t.code}" tabindex="0">
+      <span class="flag">${t.flag}</span>
+      <span class="team-name-wrap"><strong>${t.name}${t.host ? " 🏠" : ""}</strong><span class="stadium-sub">${t.code} · Kumpulan ${t.group} · Ranking ${t.rank}</span></span>
+      <span class="chip chip-champ">${t.champ >= 1 ? t.champ.toFixed(1) + "% juara" : "<1% juara"}</span>
+      <span class="expand-chevron" aria-hidden="true">›</span>
+    </article>`;
+}
+
+function renderRamalanTeamList() {
+  renderRamGroupTabs();
+  const query = document.querySelector("#ram-search").value.trim().toLowerCase();
+  const list = ramalanData.teams
+    .filter((t) => selectedRamalanGroup === "all" || t.group === selectedRamalanGroup)
+    .filter((t) => t.name.toLowerCase().includes(query) || t.code.toLowerCase().includes(query));
+  document.querySelector("#ram-team-list").innerHTML = list.length
+    ? list.map(ramTeamRow).join("")
+    : `<div class="empty-state">Tiada pasukan ditemui.</div>`;
+}
+
+function teamSheetBody(t) {
+  const stat = (label, value) => `<div class="sheet-stat"><span>${label}</span><strong>${value}%</strong></div>`;
+  return `
+    <div class="sheet-meta">
+      <span>Kumpulan ${t.group}</span><span>Ranking FIFA ${t.rank}</span><span>Rating ${t.rating}</span>
+      ${t.host ? "<span>🏠 Negara hos</span>" : ""}
+    </div>
+    <div class="sheet-rings">
+      ${["r32", "r16", "qf", "sf", "final", "champ"].map((key) => {
+        const labels = { r32: "32 terakhir", r16: "16 terakhir", qf: "Suku akhir", sf: "Separuh akhir", final: "Final", champ: "Juara" };
+        return `<div class="sheet-ring-item">${ringSvg(t[key], 52, 5)}<span>${labels[key]}</span><strong>${t[key].toFixed(1)}%</strong></div>`;
+      }).join("")}
+    </div>
+    <div class="sheet-stats-grid">
+      ${stat("Peluang layak", t.qual.toFixed(1))}
+      ${stat("Juara kumpulan", t.gw.toFixed(1))}
+      ${stat("Naib juara kumpulan", t.ru.toFixed(1))}
+    </div>
+    <p class="sheet-disclaimer">Kebarangkalian model statistik, bukan jaminan. Tidak mengambil kira kecederaan, kad larangan atau keputusan taktikal jurulatih.</p>`;
+}
+
+function openTeamSheet(code) {
+  const t = ramalanData.teams.find((x) => x.code === code);
+  if (!t) return;
+  document.querySelector("#sheet-flag").textContent = t.flag;
+  document.querySelector("#sheet-title").textContent = `${t.name}${t.host ? " (Hos)" : ""}`;
+  document.querySelector("#sheet-body").innerHTML = teamSheetBody(t);
+  openSheet();
+  animateRings(document.querySelector("#sheet-body"));
+}
+
+function openSheet() {
+  document.querySelector("#sheet-backdrop").classList.add("is-open");
+  document.querySelector("#detail-sheet").classList.add("is-open");
+  document.body.classList.add("sheet-locked");
+}
+
+function closeSheet() {
+  document.querySelector("#sheet-backdrop").classList.remove("is-open");
+  document.querySelector("#detail-sheet").classList.remove("is-open");
+  document.body.classList.remove("sheet-locked");
+}
+
+function fireConfetti() {
+  const canvas = document.querySelector("#confetti-canvas");
+  if (!canvas) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext("2d");
+  const colors = ["#d4af37", "#ffd700", "#1850f0", "#ffffff", "#c4170c"];
+  const particles = Array.from({ length: 140 }, () => ({
+    x: Math.random() * canvas.width,
+    y: -20 - Math.random() * canvas.height * 0.3,
+    r: 3 + Math.random() * 4,
+    vy: 2 + Math.random() * 3,
+    vx: -1.5 + Math.random() * 3,
+    rot: Math.random() * 360,
+    vr: -6 + Math.random() * 12,
+    color: colors[Math.floor(Math.random() * colors.length)],
+  }));
+  canvas.classList.add("is-active");
+  let frame = 0;
+  function tick() {
+    frame += 1;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rot * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.r, -p.r * 0.6, p.r * 2, p.r * 1.2);
+      ctx.restore();
+    });
+    if (frame < 150) {
+      window.requestAnimationFrame(tick);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.classList.remove("is-active");
+    }
+  }
+  window.requestAnimationFrame(tick);
+}
+
+const sejarahContent = {
+  2018: {
+    flag: "🇷🇺", title: "Piala Dunia 2018 — Rusia", champion: "Perancis", champFlag: "🇫🇷",
+    runnerUp: "Croatia", score: "4–2", goldenBoot: "Harry Kane (England) — 6 gol",
+    goldenBall: "Luka Modric (Croatia)", facts: [
+      "Kali pertama VAR digunakan dalam Piala Dunia.",
+      "Perancis menjuarai kali kedua, 20 tahun selepas 1998.",
+      "Croatia mencapai final sulung mereka.",
+      "11 bandar hos, 12 stadium di seluruh Rusia.",
+    ],
+  },
+  2022: {
+    flag: "🇶🇦", title: "Piala Dunia 2022 — Qatar", champion: "Argentina", champFlag: "🇦🇷",
+    runnerUp: "Perancis", score: "3–3 (pp 4–2)", goldenBoot: "Kylian Mbappé (Perancis) — 8 gol",
+    goldenBall: "Lionel Messi (Argentina)", facts: [
+      "Final paling dramatik dalam sejarah — hat-trick Mbappé tidak cukup menghalang Argentina.",
+      "Piala Dunia ketiga Messi sebagai juara, melengkapkan koleksi kerjayanya.",
+      "Edisi pertama yang diadakan pada musim sejuk (Nov–Dis).",
+      "Edisi terakhir dengan format 32 pasukan sebelum 2026 berkembang ke 48 pasukan.",
+    ],
+  },
+};
+
+function renderSejarahYear(year) {
+  if (year === 2026) {
+    const finished = matches.filter((m) => m.status === "finished").length;
+    const live = matches.filter((m) => m.status === "live").length;
+    const upcoming = matches.filter((m) => m.status === "upcoming").length;
+    return `
+      <div class="champion-banner champion-banner-live">
+        <span class="champion-flag">🌎</span>
+        <div>
+          <strong>Piala Dunia 2026 — Mexico · Amerika Syarikat · Kanada</strong>
+          <span class="stadium-sub">48 pasukan · ${ramalanData.meta.nMatches} perlawanan · ${ramalanData.meta.nCities} bandar hos · pembukaan ${ramalanData.meta.openDate}</span>
+        </div>
+      </div>
+      <div class="leaderboard-grid">
+        <div class="leaderboard-card"><div class="leaderboard-head"><strong>${finished}</strong><span>perlawanan selesai</span></div></div>
+        <div class="leaderboard-card"><div class="leaderboard-head"><strong>${live}</strong><span>sedang berlangsung</span></div></div>
+        <div class="leaderboard-card"><div class="leaderboard-head"><strong>${upcoming}</strong><span>akan datang</span></div></div>
+      </div>
+      <p class="expand-disclaimer">Edisi pertama format 48 pasukan dan hos rentas 3 negara. Lihat tab Ramalan untuk kebarangkalian juara terkini.</p>`;
+  }
+  const d = sejarahContent[year];
+  return `
+    <div class="champion-banner">
+      <span class="champion-flag">${d.champFlag}</span>
+      <div>
+        <strong>${d.title}</strong>
+        <span class="stadium-sub">Juara: ${d.champion} · Naib juara: ${d.runnerUp} (${d.score})</span>
+      </div>
+      <button class="confetti-trigger confetti-trigger-sm" data-confetti="1">🎉</button>
+    </div>
+    <div class="sheet-stats-grid">
+      <div class="sheet-stat"><span>Gegelung Emas</span><strong>${d.goldenBoot}</strong></div>
+      <div class="sheet-stat"><span>Bola Emas</span><strong>${d.goldenBall}</strong></div>
+    </div>
+    <ul class="sejarah-facts">${d.facts.map((f) => `<li>${f}</li>`).join("")}</ul>`;
+}
+
+function renderSejarah() {
+  document.querySelector("#sejarah-body").innerHTML = renderSejarahYear(selectedSejarahYear);
 }
 
 function navigate(route) {
-  const validRoute = ["home", "matches", "standings", "teams", "stadiums", "news"].includes(route) ? route : "home";
+  const validRoute = ["home", "standings", "teams", "stadiums", "ramalan", "sejarah"].includes(route) ? route : "home";
   document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.dataset.page === validRoute));
   document.querySelectorAll(".main-nav a").forEach((link) => link.classList.toggle("active", link.dataset.route === validRoute));
-  // Sync bottom nav active state
-  document.querySelectorAll(".bottom-nav-item").forEach((item) => item.classList.toggle("active", item.dataset.route === validRoute));
-  document.querySelector(".main-nav").classList.remove("open");
-  document.body.classList.remove("menu-open");
-  const menuBtn = document.querySelector(".menu-button");
-  if (menuBtn) menuBtn.setAttribute("aria-expanded", "false");
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 
@@ -2422,15 +2454,11 @@ function globalSearch(query) {
     .filter((item) => `${item.name} ${item.code}`.toLowerCase().includes(normalized))
     .slice(0, 4)
     .map((item) => ({ label: `${item.flag} ${item.name}`, type: `Pasukan · Kumpulan ${item.group}`, route: "teams" }));
-  const newsResults = news
-    .filter((item) => item.title.toLowerCase().includes(normalized))
-    .slice(0, 3)
-    .map((item) => ({ label: item.title, type: item.category, route: "news" }));
   const stadiumResults = stadiums
     .filter((item) => `${item.name} ${item.fifaName} ${item.city}`.toLowerCase().includes(normalized))
     .slice(0, 3)
     .map((item) => ({ label: `🏟 ${item.name}`, type: `${item.city} · ${item.capacity.toLocaleString("en-US")}`, route: "stadiums" }));
-  const results = [...teamResults, ...stadiumResults, ...newsResults];
+  const results = [...teamResults, ...stadiumResults];
   target.innerHTML = results.length
     ? results.map((item) => `<a class="search-result" href="#${item.route}"><strong>${item.label}</strong><span>${item.type}</span></a>`).join("")
     : `<div class="empty-state">Tiada hasil ditemui.</div>`;
@@ -2438,22 +2466,6 @@ function globalSearch(query) {
 
 function initEvents() {
   window.addEventListener("hashchange", () => navigate(location.hash.slice(1)));
-  document.querySelector(".menu-button").addEventListener("click", (event) => {
-    const nav = document.querySelector(".main-nav");
-    nav.classList.toggle("open");
-    const isOpen = nav.classList.contains("open");
-    document.body.classList.toggle("menu-open", isOpen);
-    event.currentTarget.setAttribute("aria-expanded", String(isOpen));
-    event.currentTarget.setAttribute("aria-label", isOpen ? "Tutup menu" : "Buka menu");
-  });
-  document.querySelector("[data-scroll-target]").addEventListener("click", (event) => {
-    document.querySelector(`#${event.currentTarget.dataset.scrollTarget}`).scrollIntoView({ behavior: "smooth" });
-  });
-  document.querySelector("#home-group-tabs").addEventListener("click", (event) => {
-    if (!event.target.dataset.group) return;
-    selectedHomeGroup = event.target.dataset.group;
-    renderHomeTeams();
-  });
   document.querySelector("#team-page-tabs").addEventListener("click", (event) => {
     if (!event.target.dataset.group) return;
     selectedTeamGroup = event.target.dataset.group;
@@ -2481,84 +2493,75 @@ function initEvents() {
     document.querySelectorAll("#stadium-country-filter button").forEach((button) => button.classList.toggle("active", button === event.target));
     renderStadiums();
   });
-  document.querySelector("#news-filter").addEventListener("click", (event) => {
-    if (!event.target.dataset.category) return;
-    selectedNewsCategory = event.target.dataset.category;
-    document.querySelectorAll("#news-filter button").forEach((button) => button.classList.toggle("active", button === event.target));
-    renderNews();
+  document.querySelector("#ram-group-tabs").addEventListener("click", (event) => {
+    if (!event.target.dataset.ramGroup) return;
+    selectedRamalanGroup = event.target.dataset.ramGroup;
+    renderRamalanTeamList();
   });
-  document.querySelector(".team-dialog-close").addEventListener("click", () => document.querySelector("#team-dialog").close());
+  document.querySelector("#ram-search").addEventListener("input", renderRamalanTeamList);
+  document.querySelector("#sejarah-year-filter").addEventListener("click", (event) => {
+    if (!event.target.dataset.yr) return;
+    selectedSejarahYear = Number(event.target.dataset.yr);
+    document.querySelectorAll("#sejarah-year-filter button").forEach((button) => button.classList.toggle("active", button === event.target));
+    renderSejarah();
+  });
+  document.querySelector("#sheet-close").addEventListener("click", closeSheet);
+  document.querySelector("#sheet-backdrop").addEventListener("click", closeSheet);
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeSheet();
+  });
 
   document.body.addEventListener("click", (event) => {
-    const teamTarget = event.target.closest("[data-team-code]");
-    if (teamTarget && !event.target.closest("[data-favorite]")) openTeamDialog(teamTarget.dataset.teamCode);
-    const matchTarget = event.target.closest("[data-match-id]");
-    if (matchTarget) openMatchDialog(matchTarget.dataset.matchId);
-    const favorite = event.target.closest("[data-favorite]");
-    if (favorite) {
-      event.stopPropagation();
-      const code = favorite.dataset.favorite;
-      favorites.has(code) ? favorites.delete(code) : favorites.add(code);
-      localStorage.setItem("sepak26-favorites", JSON.stringify([...favorites]));
-      renderHomeTeams();
-      renderAllTeams();
+    const matchTeamTarget = event.target.closest("[data-match-team]");
+    if (matchTeamTarget) {
+      const [matchId, side] = matchTeamTarget.dataset.matchTeam.split("|");
+      toggleMatchTeamExpand(matchId, side);
+      return;
     }
-    const stadiumTarget = event.target.closest("[data-stadium-id]");
-    if (stadiumTarget) openStadiumDialog(stadiumTarget.dataset.stadiumId);
+    const matchToggleTarget = event.target.closest("[data-match-toggle]");
+    if (matchToggleTarget) {
+      toggleMatchExpand(matchToggleTarget.dataset.matchToggle);
+      return;
+    }
+    const teamRowTarget = event.target.closest(".team-row[data-team-code]");
+    if (teamRowTarget) {
+      toggleTeamRowExpand(teamRowTarget.dataset.teamCode);
+      return;
+    }
+    const stadiumRowTarget = event.target.closest(".stadium-row[data-stadium-id]");
+    if (stadiumRowTarget) {
+      toggleStadiumExpand(stadiumRowTarget.dataset.stadiumId);
+      return;
+    }
+    const confettiTarget = event.target.closest("[data-confetti]");
+    if (confettiTarget) {
+      fireConfetti();
+      return;
+    }
+    const ramCodeTarget = event.target.closest("[data-ram-code]");
+    if (ramCodeTarget) openTeamSheet(ramCodeTarget.dataset.ramCode);
   });
-  document.querySelector(".dialog-close").addEventListener("click", () => document.querySelector("#match-dialog").close());
-  document.querySelector(".stadium-dialog-close").addEventListener("click", () => document.querySelector("#stadium-dialog").close());
-  const overlay = document.querySelector(".search-overlay");
-  document.querySelector(".search-trigger").addEventListener("click", () => {
-    overlay.classList.add("open");
-    overlay.setAttribute("aria-hidden", "false");
-    setTimeout(() => document.querySelector("#global-search").focus(), 50);
-  });
-  document.querySelector(".search-close").addEventListener("click", () => {
-    overlay.classList.remove("open");
-    overlay.setAttribute("aria-hidden", "true");
-  });
+
   document.querySelector("#global-search").addEventListener("input", (event) => globalSearch(event.target.value));
   document.querySelector("#refresh-data").addEventListener("click", loadVerifiedData);
-  document.querySelector("#search-results").addEventListener("click", () => {
-    overlay.classList.remove("open");
-    overlay.setAttribute("aria-hidden", "true");
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      overlay.classList.remove("open");
-      overlay.setAttribute("aria-hidden", "true");
-      const nav = document.querySelector(".main-nav");
-      nav.classList.remove("open");
-      document.body.classList.remove("menu-open");
-      const mb = document.querySelector(".menu-button");
-      if (mb) { mb.setAttribute("aria-expanded", "false"); mb.setAttribute("aria-label", "Buka menu"); }
-    }
-    if ((event.key === "Enter" || event.key === " ") && event.target.closest("[data-team-code]")) {
-      event.preventDefault();
-      openTeamDialog(event.target.closest("[data-team-code]").dataset.teamCode);
-    }
-  });
 }
 
 function init() {
-  renderTicker();
-  renderHomeMatches();
-  renderHomeTeams();
   renderGroupTabs("#team-page-tabs", true);
   renderAllTeams();
-  renderNews();
   renderMatchFilters();
   renderSchedule();
-  renderLiveCenter();
   renderStandings();
   renderStadiums();
-  renderSourceLedger();
+  renderRamalanPodium();
+  renderRamalanRings();
+  renderRamalanSwing();
+  renderRamalanTeamList();
+  renderSejarah();
   initEvents();
   navigate(location.hash.slice(1) || "home");
   loadVerifiedData();
   window.setInterval(loadVerifiedData, 5 * 60 * 1000);
-  window.setInterval(refreshNewsData, 5 * 60 * 1000);
 }
 
 init();
