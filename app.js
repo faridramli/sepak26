@@ -1525,6 +1525,11 @@ const DATA_SOURCES = [
     name: "WorldCup26 API",
     url: "https://worldcup26.ir/get/games",
     role: "jadual + keputusan",
+    // This is the only source with live scores; it's known to be slow/unstable
+    // (observed 10-15s response times, occasional 503s), so it gets a longer
+    // timeout than the other sources to give it a fair chance to respond
+    // before falling back to local data.
+    timeoutMs: 12000,
   },
   {
     id: "tour",
@@ -1752,7 +1757,7 @@ async function loadVerifiedData() {
   // Each source gets its own timeout so one slow/dead API never stalls the others
   // or the overall refresh — Promise.allSettled still resolves quickly.
   const responses = await Promise.allSettled(DATA_SOURCES.map(async (source) => {
-    const response = await fetchWithTimeout(source.url, { cache: "no-store" });
+    const response = await fetchWithTimeout(source.url, { cache: "no-store" }, source.timeoutMs || DATA_SOURCE_TIMEOUT_MS);
     if (!response.ok) throw new Error(`${source.name}: HTTP ${response.status}`);
     return source.id === "vh26" ? response.text() : response.json();
   }));
